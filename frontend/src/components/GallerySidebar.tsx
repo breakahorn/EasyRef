@@ -1,0 +1,119 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useFileStore } from '../store/useFileStore';
+import { Search, Shuffle, Star, XCircle } from 'lucide-react';
+
+const GallerySidebar: React.FC = () => {
+  const { searchFiles, fetchRandomFile, fetchFiles } = useFileStore();
+  
+  const [tags, setTags] = useState('');
+  const [minRating, setMinRating] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [fileType, setFileType] = useState('all');
+
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      const params = {
+        tags: tags || undefined,
+        min_rating: minRating > 0 ? minRating : undefined,
+        is_favorite: isFavorite || undefined,
+        file_type: fileType === 'all' ? undefined : fileType,
+      };
+      searchFiles(params);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [tags, minRating, isFavorite, fileType, searchFiles]);
+
+  const handleClear = () => {
+    const hadFilters = tags || minRating > 0 || isFavorite || fileType !== 'all';
+    setTags('');
+    setMinRating(0);
+    setIsFavorite(false);
+    setFileType('all');
+    if (hadFilters) {
+        fetchFiles();
+    }
+  };
+
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-section">
+        <h4><Search size={18} /> Search & Filter</h4>
+        <form onSubmit={(e) => e.preventDefault()}>
+          <div className="form-group">
+            <label>File Type</label>
+            <div className="radio-group">
+              <input type="radio" id="type-all" value="all" checked={fileType === 'all'} onChange={(e) => setFileType(e.target.value)} />
+              <label htmlFor="type-all">All</label>
+              <input type="radio" id="type-image" value="image" checked={fileType === 'image'} onChange={(e) => setFileType(e.target.value)} />
+              <label htmlFor="type-image">Images</label>
+              <input type="radio" id="type-video" value="video" checked={fileType === 'video'} onChange={(e) => setFileType(e.target.value)} />
+              <label htmlFor="type-video">Videos</label>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="tags">Tags (comma-separated)</label>
+            <input 
+              type="text" 
+              id="tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="e.g., character, concept_art"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="rating">Minimum Rating</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Star size={16} color={minRating > 0 ? '#facc15' : '#6b7280'} />
+              <input 
+                type="range" 
+                id="rating" 
+                min="0" 
+                max="10" 
+                value={minRating}
+                onChange={(e) => setMinRating(Number(e.target.value))}
+                style={{ flexGrow: 1 }}
+              />
+              <span style={{ width: '2rem', textAlign: 'right' }}>{minRating > 0 ? minRating : 'Any'}</span>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={isFavorite}
+                onChange={(e) => setIsFavorite(e.target.checked)}
+                style={{ width: 'auto', marginRight: '0.5rem' }}
+              />
+              Favorites Only
+            </label>
+          </div>
+           <div className="form-group">
+            <button type="button" onClick={handleClear} className="secondary flex items-center justify-center gap-2"><XCircle size={16} />Clear Filters</button>
+          </div>
+        </form>
+      </div>
+
+      <div className="sidebar-section">
+        <h4><Shuffle size={18} /> Discover</h4>
+        <div className="form-group">
+          <button onClick={() => fetchRandomFile()} className="flex items-center justify-center gap-2">Show Random File</button>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+export default GallerySidebar;
