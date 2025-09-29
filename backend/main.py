@@ -1,11 +1,11 @@
 
 import os
 import shutil
-import cv2 # Import OpenCV
+import cv2
 from typing import List, Optional
 from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
 
@@ -21,6 +21,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# --- Middleware ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,11 +30,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Constants and Setup ---
 STORAGE_PATH = "./storage"
 os.makedirs(STORAGE_PATH, exist_ok=True)
 
-app.mount("/storage", StaticFiles(directory=STORAGE_PATH), name="storage")
+IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp')
+VIDEO_EXTENSIONS = ('.mp4', '.webm', '.mov', '.avi')
 
+# --- Dependencies ---
 def get_db():
     db = SessionLocal()
     try:
@@ -41,38 +45,38 @@ def get_db():
     finally:
         db.close()
 
-IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp')
-VIDEO_EXTENSIONS = ('.mp4', '.webm', '.mov', '.avi')
-
-# --- Helper function to get video metadata ---
+# --- Helper Functions ---
 def _get_video_metadata(file_path: str) -> dict:
     try:
         cap = cv2.VideoCapture(file_path)
-        if not cap.isOpened():
-            return {}
-        
+        if not cap.isOpened(): return {}
         fps = cap.get(cv2.CAP_PROP_FPS)
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         duration = frame_count / fps if fps > 0 else 0
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         cap.release()
-        
         return {"duration": duration, "width": width, "height": height}
-    except Exception:
-        return {}
+    except Exception: return {}
 
-# --- API Endpoints ---
+# --- Core API Endpoints ---
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the EasyRef API!"}
 
+# Custom endpoint to serve files with CORS headers
+@app.get("/storage/{filename}")
+async def get_storage_file(filename: str):
+    file_path = os.path.join(STORAGE_PATH, filename)
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path, headers={"Access-Control-Allow-Origin": "*"})
+
 @app.post("/files/upload", response_model=schemas.File)
 def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
     file_location = os.path.join(STORAGE_PATH, file.filename)
-    if ".." in file.filename:
-        raise HTTPException(status_code=400, detail="Invalid filename.")
+    if ".." in file.filename: raise HTTPException(status_code=400, detail="Invalid filename.")
     try:
         with open(file_location, "wb+") as file_object:
             shutil.copyfileobj(file.file, file_object)
@@ -80,8 +84,6 @@ def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
     
     db_file = models.File(name=file.filename, path=file_location)
-    
-    # If the file is a video, extract and save its metadata
     if file.filename.lower().endswith(VIDEO_EXTENSIONS):
         video_meta = _get_video_metadata(file_location)
         if video_meta:
@@ -122,10 +124,23 @@ def search_files(
         query = query.filter(or_(*[func.lower(models.File.name).endswith(ext) for ext in VIDEO_EXTENSIONS]))
     return query.all()
 
+@app.put("/files/{file_id}/metadata", response_model=schemas.Metadata)
+def update_file_metadata(file_id: int, metadata: schemas.MetadataUpdate, db: Session = Depends(get_db)):
+    db_file = db.query(models.File).filter(models.File.id == file_id).first()
+    if db_file is None: raise HTTPException(status_code=404, detail="File not found")
+    if db_file.file_metadata:
+        update_data = metadata.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_file.file_metadata, key, value)
+    else:
+        db_file.file_metadata = models.Metadata(**metadata.model_dump(), file_id=file_id)
+    db.commit()
+    db.refresh(db_file.file_metadata)
+    return db_file.file_metadata
+
 @app.get("/files/random/", response_model=schemas.File)
 def get_random_file(db: Session = Depends(get_db)):
     random_file = db.query(models.File).order_by(func.random()).first()
-    if not random_file:
-        raise HTTPException(status_code=404, detail="No files found in the library")
+    if not random_file: raise HTTPException(status_code=404, detail="No files found in the library")
     return random_file
 

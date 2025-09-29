@@ -19,6 +19,7 @@ interface FileState {
   fetchRandomFile: () => Promise<void>;
   uploadFiles: (files: FileList) => Promise<void>;
   selectFile: (file: FileRecord | null) => void;
+  updateMetadata: (fileId: number, metadata: Partial<FileRecord['file_metadata']>) => Promise<void>;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
@@ -55,28 +56,14 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   uploadFiles: async (files: FileList) => {
     set({ isLoading: true });
-    const formData = new FormData();
-    
-    // Append all files to the same form data object
-    for (let i = 0; i < files.length; i++) {
-      formData.append("file", files[i]);
-      // The backend needs to be able to handle multiple files under the same key
-      // A more robust way is to send one by one.
-    }
-
     try {
-      // Let's upload one by one to be safe and give better feedback
       const uploadPromises = Array.from(files).map(file => {
         const singleFormData = new FormData();
         singleFormData.append('file', file);
         return axios.post(`${API_BASE_URL}/files/upload`, singleFormData);
       });
-
       await Promise.all(uploadPromises);
-
-      // After all uploads are successful, refresh the file list
       await get().fetchFiles();
-
     } catch (error) {
       console.error("Error uploading files:", error);
     } finally {
@@ -86,5 +73,24 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   selectFile: (file) => {
     set({ selectedFile: file });
+  },
+
+  updateMetadata: async (fileId, metadata) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/files/${fileId}/metadata`, metadata);
+      const updatedFile = response.data;
+
+      // Update the selected file in the store
+      set(state => ({
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId 
+          ? { ...state.selectedFile, file_metadata: updatedFile }
+          : state.selectedFile,
+        // Also update the file in the main file list
+        files: state.files.map(f => f.id === fileId ? { ...f, file_metadata: updatedFile } : f)
+      }));
+
+    } catch (error) {
+      console.error(`Error updating metadata for file ${fileId}:`, error);
+    }
   },
 }));
