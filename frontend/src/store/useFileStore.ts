@@ -64,13 +64,15 @@ export const useFileStore = create<FileState>((set, get) => ({
     }
   },
 
-  fetchRandomFile: async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/files/random/`);
-      set({ selectedFile: response.data });
-    } catch (error) {
-      console.error("Error fetching random file:", error);
-    }
+  fetchRandomFile: () => {
+    set(state => {
+      if (state.files.length === 0) return {}; // Do nothing if no files are displayed
+
+      const randomIndex = Math.floor(Math.random() * state.files.length);
+      const randomFile = state.files[randomIndex];
+      
+      return { selectedFile: randomFile };
+    });
   },
 
   uploadFiles: async (files: FileList) => {
