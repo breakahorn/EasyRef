@@ -144,3 +144,24 @@ def get_random_file(db: Session = Depends(get_db)):
     if not random_file: raise HTTPException(status_code=404, detail="No files found in the library")
     return random_file
 
+@app.delete("/files/{file_id}", status_code=204)
+def delete_file(file_id: int, db: Session = Depends(get_db)):
+    db_file = db.query(models.File).filter(models.File.id == file_id).first()
+    if db_file is None:
+        # Even if file is not found, from a DELETE perspective, the state is what we want.
+        # You might want to return 404 instead, depending on strictness.
+        return
+    
+    # Delete the actual file from storage
+    if os.path.exists(db_file.path):
+        try:
+            os.remove(db_file.path)
+        except OSError as e:
+            # Log this error, but don't block DB deletion
+            print(f"Error deleting file {db_file.path}: {e}")
+
+    db.delete(db_file)
+    db.commit()
+    return
+
+

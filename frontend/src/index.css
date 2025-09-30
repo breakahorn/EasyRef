@@ -155,7 +155,21 @@ body {
 }
 
 .form-group button.secondary:hover {
-    background-color: var(--color-border);
+    background-color: #4b5563; /* gray-600 */
+}
+
+.form-group button.danger {
+    background-color: #dc2626; /* bg-red-600 */
+    color: white;
+}
+
+.form-group button.danger:hover {
+    background-color: #b91c1c; /* bg-red-700 */
+}
+
+/* Override for viewer controls buttons */
+.viewer-controls .form-group button {
+    width: auto;
 }
 
 .radio-group {

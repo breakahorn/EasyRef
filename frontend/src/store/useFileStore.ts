@@ -78,19 +78,29 @@ export const useFileStore = create<FileState>((set, get) => ({
   updateMetadata: async (fileId, metadata) => {
     try {
       const response = await axios.put(`${API_BASE_URL}/files/${fileId}/metadata`, metadata);
-      const updatedFile = response.data;
+      const updatedMetadata = response.data;
 
-      // Update the selected file in the store
       set(state => ({
         selectedFile: state.selectedFile && state.selectedFile.id === fileId 
-          ? { ...state.selectedFile, file_metadata: updatedFile }
+          ? { ...state.selectedFile, file_metadata: updatedMetadata }
           : state.selectedFile,
-        // Also update the file in the main file list
-        files: state.files.map(f => f.id === fileId ? { ...f, file_metadata: updatedFile } : f)
+        files: state.files.map(f => f.id === fileId ? { ...f, file_metadata: updatedMetadata } : f)
       }));
 
     } catch (error) {
       console.error(`Error updating metadata for file ${fileId}:`, error);
+    }
+  },
+
+  deleteFile: async (fileId: number) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/files/${fileId}`);
+      set(state => ({
+        files: state.files.filter(f => f.id !== fileId),
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId ? null : state.selectedFile,
+      }));
+    } catch (error) {
+      console.error(`Error deleting file ${fileId}:`, error);
     }
   },
 }));

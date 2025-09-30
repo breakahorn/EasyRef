@@ -16,14 +16,14 @@ const RatingDisplay: React.FC<{ rating: number }> = ({ rating }) => {
 };
 
 const FileDetailModal: React.FC = () => {
-  const { selectedFile, selectFile } = useFileStore();
-  
+  const { selectedFile, selectFile, deleteFile } = useFileStore();
+
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const startPos = useRef({ x: 0, y: 0 });
-  
+
   const [isPickerEnabled, setIsPickerEnabled] = useState(false);
   const [pickedColor, setPickedColor] = useState<string | null>(null);
   const [isColorLocked, setIsColorLocked] = useState(false);
@@ -59,7 +59,7 @@ const FileDetailModal: React.FC = () => {
       }
       return () => { imageRef.current = null; };
     } else {
-        imageRef.current = null;
+      imageRef.current = null;
     }
   }, [selectedFile, isImage, resetViewerState]);
 
@@ -74,11 +74,9 @@ const FileDetailModal: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size to container size
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
 
-    // Calculate image display size (object-fit: contain)
     const containerRatio = canvas.width / canvas.height;
     const imageRatio = image.naturalWidth / image.naturalHeight;
     let drawWidth, drawHeight, drawX, drawY;
@@ -93,16 +91,11 @@ const FileDetailModal: React.FC = () => {
     drawX = (canvas.width - drawWidth) / 2;
     drawY = (canvas.height - drawHeight) / 2;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Apply transformations
     ctx.save();
     ctx.translate(position.x + canvas.width / 2, position.y + canvas.height / 2);
     ctx.scale(scale * (isFlipped ? -1 : 1), scale);
     ctx.translate(-canvas.width / 2, -canvas.height / 2);
-    
-    // Draw the image
     ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
     ctx.restore();
 
@@ -121,16 +114,15 @@ const FileDetailModal: React.FC = () => {
 
   const handleMouseUpOrLeave = () => setIsPanning(false);
 
-  // Manual event listener for wheel to allow preventDefault
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !isImage) return;
 
     const wheelHandler = (e: WheelEvent) => {
-        e.preventDefault();
-        const zoomFactor = 1.1;
-        const newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
-        setScale(Math.max(0.1, Math.min(newScale, 20)));
+      e.preventDefault();
+      const zoomFactor = 1.1;
+      const newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
+      setScale(Math.max(0.1, Math.min(newScale, 20)));
     };
 
     container.addEventListener('wheel', wheelHandler, { passive: false });
@@ -138,25 +130,31 @@ const FileDetailModal: React.FC = () => {
     return () => {
       container.removeEventListener('wheel', wheelHandler);
     };
-  }, [isImage, scale]); // Re-add listener if isImage or scale changes
+  }, [isImage, scale]);
 
   const handleColorPick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isPickerEnabled || isColorLocked) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      const pixel = ctx.getImageData(x, y, 1, 1).data;
-      setPickedColor(`#${("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6)}`);
+    if (!isPickerEnabled || isColorLocked) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    setPickedColor(`#${("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6)}`);
   };
 
   const handleColorLockToggle = () => {
-      if (isPickerEnabled) {
-          setIsColorLocked(!isColorLocked);
-      }
+    if (isPickerEnabled) {
+      setIsColorLocked(!isColorLocked);
+    }
+  };
+
+  const handleDelete = () => {
+    if (selectedFile && window.confirm(`Are you sure you want to delete "${selectedFile.name}"? This action cannot be undone.`)) {
+      deleteFile(selectedFile.id);
+    }
   };
 
   if (!selectedFile) return null;
@@ -166,8 +164,8 @@ const FileDetailModal: React.FC = () => {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header"><button className="modal-close-button" onClick={() => selectFile(null)}><X size={24} /></button></div>
         <div className="modal-body flex flex-row h-full gap-8">
-          <div 
-            ref={containerRef} 
+          <div
+            ref={containerRef}
             className="flex-1 h-full bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden relative"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -175,11 +173,11 @@ const FileDetailModal: React.FC = () => {
             onMouseLeave={handleMouseUpOrLeave}
           >
             {isImage ? (
-                <canvas ref={canvasRef} onMouseMove={handleColorPick} onClick={handleColorLockToggle} style={{ cursor: isPickerEnabled ? 'crosshair' : (isPanning ? 'grabbing' : 'grab') }} />
+              <canvas ref={canvasRef} onMouseMove={handleColorPick} onClick={handleColorLockToggle} style={{ cursor: isPickerEnabled ? 'crosshair' : (isPanning ? 'grabbing' : 'grab') }} />
             ) : isVideo ? (
-                <video src={`${API_BASE_URL}/${selectedFile.path.replace(/\\/g, '/').replace(/^\.?\//, '')}`} controls autoPlay loop className="max-w-full max-h-full object-contain" />
+              <video src={`${API_BASE_URL}/${selectedFile.path.replace(/\\/g, '/').replace(/^\.?\//, '')}`} controls autoPlay loop className="max-w-full max-h-full object-contain" />
             ) : (
-                <p>Unsupported file type</p>
+              <p>Unsupported file type</p>
             )}
           </div>
           <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar no-scrollbar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
@@ -190,16 +188,16 @@ const FileDetailModal: React.FC = () => {
               </button>
             </div>
             <p className="text-sm text-gray-400 -mt-3 mb-4">Uploaded: {new Date(selectedFile.created_at).toLocaleString()}</p>
-            
+
             {isImage && (
-              <div className="sidebar-section">
+              <div className="sidebar-section viewer-controls">
                 <h4>Viewer Controls</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2)}><ZoomIn size={18} /> Zoom In</button>
-                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s / 1.2)}><ZoomOut size={18} /> Zoom Out</button>
-                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setIsFlipped(f => !f)}><FlipHorizontal size={18} /> Flip</button>
-                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={resetViewerState}><RotateCcw size={18} /> Reset</button>
-                  <button className="form-group button secondary flex items-center justify-center gap-2 col-span-2" onClick={() => setIsPickerEnabled(p => !p)}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button>
+                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2)}><ZoomIn size={18} /> Zoom In</button></div>
+                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s / 1.2)}><ZoomOut size={18} /> Zoom Out</button></div>
+                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setIsFlipped(f => !f)}><FlipHorizontal size={18} /> Flip</button></div>
+                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={resetViewerState}><RotateCcw size={18} /> Reset</button></div>
+                  <div className="form-group col-span-2"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setIsPickerEnabled(p => !p)}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button></div>
                 </div>
                 {isPickerEnabled && (
                   <div className="flex items-center gap-2 text-sm text-gray-300 mt-3 p-2 bg-black/20 rounded-md">
@@ -227,7 +225,11 @@ const FileDetailModal: React.FC = () => {
             </div>
             <div className="mt-auto pt-4 border-t border-gray-700">
               <h4 className="font-semibold text-red-500/80">Danger Zone</h4>
-              <button disabled className="w-full bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 py-2 rounded-md flex items-center justify-center gap-2 transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed">Delete this file</button>
+              <div className="form-group">
+                <button onClick={handleDelete} className="button danger flex items-center justify-center gap-2">
+                  Delete this file
+                </button>
+              </div>
             </div>
           </div>
         </div>
