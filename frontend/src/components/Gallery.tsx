@@ -20,6 +20,7 @@ const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
 
 const DraggableGalleryItem = ({ file }) => {
+  console.log("Rendering item with file:", file); // DEBUG LINE
   const { selectFile } = useFileStore();
   const { activeBoardId, addItemToBoard } = useBoardStore();
 
@@ -56,7 +57,7 @@ const DraggableGalleryItem = ({ file }) => {
 
   const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
   const isImage = IMAGE_EXTENSIONS.includes(fileExtension);
-  const isVideo = VIDEO_EXTENSIONS.includes(fileExtension);
+  const isVideo = file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.webm') || file.name.toLowerCase().endsWith('.mov') || file.name.toLowerCase().endsWith('.avi');
 
   const formatDuration = (seconds: number) => {
     if (isNaN(seconds)) return '00:00';
@@ -83,11 +84,6 @@ const DraggableGalleryItem = ({ file }) => {
       style={{ opacity: isDragging ? 0.5 : 1 }}
       onClick={() => selectFile(file)}
     >
-      {activeBoardId && isImage && (
-        <button className="add-to-board-btn" onClick={handleAddToBoard}>
-          <Plus size={20} />
-        </button>
-      )}
       {renderThumbnail()}
       {isVideo && file.file_metadata && (
         <div className="video-info-overlay">

@@ -3,11 +3,27 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
+// Define the shape of the nested metadata object
+interface FileMetadata {
+  rating: number | null;
+  notes: string | null;
+  source_url: string | null;
+  is_favorite: boolean;
+  duration: number | null;
+  width: number | null;
+  height: number | null;
+  id: number;
+  file_id: number;
+}
+
+// Define the shape of the main file record
 interface FileRecord {
   id: number;
   name: string;
   path: string;
-  file_metadata?: { [key: string]: any };
+  created_at: string;
+  tags: { id: number; name: string }[];
+  file_metadata: FileMetadata | null;
 }
 
 interface FileState {
@@ -19,7 +35,10 @@ interface FileState {
   fetchRandomFile: () => Promise<void>;
   uploadFiles: (files: FileList) => Promise<void>;
   selectFile: (file: FileRecord | null) => void;
-  updateMetadata: (fileId: number, metadata: Partial<FileRecord['file_metadata']>) => Promise<void>;
+  updateMetadata: (fileId: number, metadata: Partial<FileMetadata>) => Promise<void>;
+  deleteFile: (fileId: number) => Promise<void>;
+  addTag: (fileId: number, tagName: string) => Promise<void>;
+  removeTag: (fileId: number, tagId: number) => Promise<void>;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
@@ -116,8 +135,10 @@ export const useFileStore = create<FileState>((set, get) => ({
       const response = await axios.post(`${API_BASE_URL}/files/${fileId}/tags`, { name: tagName });
       const updatedFile = response.data;
       set(state => ({
-        selectedFile: state.selectedFile && state.selectedFile.id === fileId ? updatedFile : state.selectedFile,
-        files: state.files.map(f => f.id === fileId ? updatedFile : f),
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId 
+          ? { ...state.selectedFile, tags: updatedFile.tags }
+          : state.selectedFile,
+        files: state.files.map(f => f.id === fileId ? { ...f, tags: updatedFile.tags } : f),
       }));
     } catch (error) {
       console.error(`Error adding tag to file ${fileId}:`, error);
@@ -129,8 +150,10 @@ export const useFileStore = create<FileState>((set, get) => ({
       const response = await axios.delete(`${API_BASE_URL}/files/${fileId}/tags/${tagId}`);
       const updatedFile = response.data;
       set(state => ({
-        selectedFile: state.selectedFile && state.selectedFile.id === fileId ? updatedFile : state.selectedFile,
-        files: state.files.map(f => f.id === fileId ? updatedFile : f),
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId 
+          ? { ...state.selectedFile, tags: updatedFile.tags }
+          : state.selectedFile,
+        files: state.files.map(f => f.id === fileId ? { ...f, tags: updatedFile.tags } : f),
       }));
     } catch (error) {
       console.error(`Error removing tag from file ${fileId}:`, error);

@@ -251,6 +251,9 @@ body {
 
 .gallery-item {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -267,6 +270,27 @@ body {
 
 .gallery-item img,
 .gallery-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 10;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -392,50 +416,54 @@ body {
 
 /* --- Tag Input Form Style --- */
 .tag-input-form {
-    width: 100%;
-    padding: 0.6rem 0.8rem;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-panel-2);
-    color: var(--color-text-primary);
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-panel-2);
+  color: var(--color-text-primary);
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .tag-input-form:focus {
-    outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
 
 .tag-add-form {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }
 
 /* --- Modal Specific Styles --- */
 .uploaded-date {
-    margin-top: -0.5rem; /* Pulls it closer to the title */
-    margin-bottom: 1rem;
+  margin-top: -0.5rem;
+  /* Pulls it closer to the title */
+  margin-bottom: 1rem;
 }
 
 .tag-list-container {
-    row-gap: 0.5rem;
+  row-gap: 0.5rem;
 }
 
 /* --- Notes Textarea Style --- */
 .notes-textarea {
-    width: 100%;
-    height: 8rem; /* h-32 */
-    padding: 0.75rem; /* p-3 */
-    border-radius: 8px; /* rounded-md */
-    border: 1px solid var(--color-border);
-    background-color: var(--color-panel-2);
-    color: var(--color-text-primary);
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    resize: vertical;
+  width: 100%;
+  height: 8rem;
+  /* h-32 */
+  padding: 0.75rem;
+  /* p-3 */
+  border-radius: 8px;
+  /* rounded-md */
+  border: 1px solid var(--color-border);
+  background-color: var(--color-panel-2);
+  color: var(--color-text-primary);
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  resize: vertical;
 }
 
 .notes-textarea:focus {
-    outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }

@@ -53,7 +53,7 @@ const FileDetailModal: React.FC = () => {
     if (selectedFile) {
       setNotesText(selectedFile.file_metadata?.notes || "");
     }
-  }, [selectedFile]);
+  }, [selectedFile?.id]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -67,7 +67,6 @@ const FileDetailModal: React.FC = () => {
     setPickedColor(null);
   }, []);
 
-  // This effect should now only run when the FILE ID changes.
   useEffect(() => {
     if (selectedFile) {
       resetViewerState();
