@@ -16,22 +16,21 @@ const RatingDisplay: React.FC<{ rating: number }> = ({ rating }) => {
 };
 
 const FileDetailModal: React.FC = () => {
-  const { selectedFile, selectFile, updateMetadata } = useFileStore();
-
-  // Viewer state
+  const { selectedFile, selectFile } = useFileStore();
+  
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const startPos = useRef({ x: 0, y: 0 });
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-
-  // Color picker state
+  
   const [isPickerEnabled, setIsPickerEnabled] = useState(false);
   const [pickedColor, setPickedColor] = useState<string | null>(null);
   const [isColorLocked, setIsColorLocked] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const resetViewerState = useCallback(() => {
     setScale(1);
@@ -39,120 +38,150 @@ const FileDetailModal: React.FC = () => {
     setIsFlipped(false);
     setIsPickerEnabled(false);
     setPickedColor(null);
-    setIsColorLocked(false);
   }, []);
-
-  useEffect(() => {
-    if (selectedFile) {
-      resetViewerState();
-    }
-  }, [selectedFile, resetViewerState]);
-
-  const handleClose = () => selectFile(null);
-
-  const getFileUrl = (filePath: string) => `${API_BASE_URL}/${filePath.replace(/\\/g, '/').replace(/^\.?\//, '')}`;
 
   const fileExtension = selectedFile?.name.split('.').pop()?.toLowerCase() || '';
   const isImage = IMAGE_EXTENSIONS.includes(fileExtension);
   const isVideo = VIDEO_EXTENSIONS.includes(fileExtension);
 
-  // --- Viewer Handlers ---
-  const handleWheel = (e: WheelEvent) => {
-    if (!isImage || !imageContainerRef.current) return;
-    e.preventDefault();
-    const { deltaY, ctrlKey } = e;
-    if (ctrlKey) { // Pan vertically with Ctrl+Wheel
-      setPosition(p => ({ ...p, y: p.y - deltaY }));
-    } else { // Zoom
-      const zoomFactor = 1.1;
-      const newScale = deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
-      setScale(Math.max(0.1, Math.min(newScale, 20)));
+  // Load image into memory
+  useEffect(() => {
+    if (isImage && selectedFile) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = `${API_BASE_URL}/${selectedFile.path.replace(/\\/g, '/').replace(/^\.?\//, '')}`;
+      img.onload = () => {
+        imageRef.current = img;
+        resetViewerState(); // Reset state when new image is loaded
+      };
+      img.onerror = () => {
+        imageRef.current = null;
+      }
+      return () => { imageRef.current = null; };
+    } else {
+        imageRef.current = null;
     }
-  };
+  }, [selectedFile, isImage, resetViewerState]);
+
+  // Main drawing logic
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    const image = imageRef.current;
+
+    if (!canvas || !container || !image) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size to container size
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+
+    // Calculate image display size (object-fit: contain)
+    const containerRatio = canvas.width / canvas.height;
+    const imageRatio = image.naturalWidth / image.naturalHeight;
+    let drawWidth, drawHeight, drawX, drawY;
+
+    if (containerRatio > imageRatio) {
+      drawHeight = canvas.height;
+      drawWidth = drawHeight * imageRatio;
+    } else {
+      drawWidth = canvas.width;
+      drawHeight = drawWidth / imageRatio;
+    }
+    drawX = (canvas.width - drawWidth) / 2;
+    drawY = (canvas.height - drawHeight) / 2;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Apply transformations
+    ctx.save();
+    ctx.translate(position.x + canvas.width / 2, position.y + canvas.height / 2);
+    ctx.scale(scale * (isFlipped ? -1 : 1), scale);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
+    
+    // Draw the image
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    ctx.restore();
+
+  }, [scale, position, isFlipped, selectedFile, isImage]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isPickerEnabled || !isImage) return;
-    e.preventDefault();
+    if (!isImage) return;
     setIsPanning(true);
     startPos.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isPanning || !isImage) return;
-    e.preventDefault();
+    if (!isPanning) return;
     setPosition({ x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y });
   };
 
   const handleMouseUpOrLeave = () => setIsPanning(false);
 
+  // Manual event listener for wheel to allow preventDefault
   useEffect(() => {
-    const container = imageContainerRef.current;
-    if (container && isImage) {
-      container.addEventListener('wheel', handleWheel, { passive: false });
-      return () => container.removeEventListener('wheel', handleWheel);
-    }
-  }, [isImage, scale]); // Re-attach if scale changes to ensure it's not stale
+    const container = containerRef.current;
+    if (!container || !isImage) return;
 
-  // --- Color Picker Logic ---
-  useEffect(() => {
-    if (isPickerEnabled && imageRef.current && canvasRef.current) {
-      const image = imageRef.current;
+    const wheelHandler = (e: WheelEvent) => {
+        e.preventDefault();
+        const zoomFactor = 1.1;
+        const newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
+        setScale(Math.max(0.1, Math.min(newScale, 20)));
+    };
+
+    container.addEventListener('wheel', wheelHandler, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', wheelHandler);
+    };
+  }, [isImage, scale]); // Re-add listener if isImage or scale changes
+
+  const handleColorPick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!isPickerEnabled || isColorLocked) return;
       const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
       const ctx = canvas.getContext('2d');
-      const drawImageToCanvas = () => {
-        if (!ctx) return;
-        canvas.width = image.naturalWidth;
-        canvas.height = image.naturalHeight;
-        ctx.drawImage(image, 0, 0);
-      };
-      if (image.complete) drawImageToCanvas();
-      else image.onload = drawImageToCanvas;
-    }
-  }, [isPickerEnabled, selectedFile]);
+      if (!ctx) return;
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      setPickedColor(`#${("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6)}`);
+  };
 
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isPickerEnabled || !canvasRef.current || isColorLocked) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const pixel = ctx.getImageData(x, y, 1, 1).data;
-    setPickedColor(`#${("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6)}`);
+  const handleColorLockToggle = () => {
+      if (isPickerEnabled) {
+          setIsColorLocked(!isColorLocked);
+      }
   };
 
   if (!selectedFile) return null;
 
-  const renderMedia = () => {
-    const url = getFileUrl(selectedFile.path);
-    const transform = `translate(${position.x}px, ${position.y}px) scale(${scale}) scaleX(${isFlipped ? -1 : 1})`;
-
-    if (isImage) {
-      return (
-        <div style={{ transform, cursor: isPanning ? 'grabbing' : 'grab' }}>
-          <img ref={imageRef} src={url} alt={selectedFile.name} crossOrigin="anonymous" style={{ visibility: isPickerEnabled ? 'hidden' : 'visible' }} />
-          {isPickerEnabled && <canvas ref={canvasRef} onMouseMove={handleCanvasMouseMove} onClick={() => setIsColorLocked(!isColorLocked)} style={{ position: 'absolute', top: 0, left: 0, cursor: 'crosshair' }} />}
-        </div>
-      );
-    } else if (isVideo) {
-      return <video src={url} controls autoPlay loop className="max-w-full max-h-full object-contain" />;
-    } else {
-      return <p>Unsupported file type</p>;
-    }
-  };
-
   return (
-    <div className="modal-backdrop" onClick={handleClose}>
+    <div className="modal-backdrop" onClick={() => selectFile(null)}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header"><button className="modal-close-button" onClick={handleClose}><X size={24} /></button></div>
+        <div className="modal-header"><button className="modal-close-button" onClick={() => selectFile(null)}><X size={24} /></button></div>
         <div className="modal-body flex flex-row h-full gap-8">
-          {/* Viewer Area */}
-          <div ref={imageContainerRef} className="flex-1 h-full bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUpOrLeave} onMouseLeave={handleMouseUpOrLeave}>
-            {renderMedia()}
+          <div 
+            ref={containerRef} 
+            className="flex-1 h-full bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden relative"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUpOrLeave}
+            onMouseLeave={handleMouseUpOrLeave}
+          >
+            {isImage ? (
+                <canvas ref={canvasRef} onMouseMove={handleColorPick} onClick={handleColorLockToggle} style={{ cursor: isPickerEnabled ? 'crosshair' : (isPanning ? 'grabbing' : 'grab') }} />
+            ) : isVideo ? (
+                <video src={`${API_BASE_URL}/${selectedFile.path.replace(/\\/g, '/').replace(/^\.?\//, '')}`} controls autoPlay loop className="max-w-full max-h-full object-contain" />
+            ) : (
+                <p>Unsupported file type</p>
+            )}
           </div>
-
-          {/* Details & Actions Area */}
           <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
             <div className="flex justify-between items-center text-xl font-semibold gap-4">
               <h3 title={selectedFile.name} className="truncate">{selectedFile.name}</h3>
@@ -161,23 +190,25 @@ const FileDetailModal: React.FC = () => {
               </button>
             </div>
             <p className="text-sm text-gray-400 -mt-3 mb-4">Uploaded: {new Date(selectedFile.created_at).toLocaleString()}</p>
-
-            {isImage && (<div className="sidebar-section">
-              <h4>Viewer Controls</h4>
-                              <div className="grid grid-cols-2 gap-2">
-                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2)}><ZoomIn size={18} /> Zoom In</button>
-                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s / 1.2)}><ZoomOut size={18} /> Zoom Out</button>
-                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setIsFlipped(f => !f)}><FlipHorizontal size={18} /> Flip</button>
-                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={resetViewerState}><RotateCcw size={18} /> Reset</button>
-                                <button className="form-group button secondary flex items-center justify-center gap-2 col-span-2" onClick={() => setIsPickerEnabled(p => !p)}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button>
-                              </div>              {isPickerEnabled && (
-                <div className="flex items-center gap-2 text-sm text-gray-300 mt-3 p-2 bg-black/20 rounded-md">
-                  <div style={{ backgroundColor: pickedColor || 'transparent', width: '24px', height: '24px', border: '1px solid var(--color-border)', borderRadius: '4px' }}></div>
-                  <span className="font-mono flex-grow">{pickedColor || 'Hover to pick'} {isColorLocked && '(Locked)'}</span>
-                  {pickedColor && <button className="bg-gray-600 hover:bg-gray-500 p-1.5 rounded-md" onClick={() => navigator.clipboard.writeText(pickedColor)}><Copy size={16} /></button>}
+            
+            {isImage && (
+              <div className="sidebar-section">
+                <h4>Viewer Controls</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2)}><ZoomIn size={18} /> Zoom In</button>
+                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s / 1.2)}><ZoomOut size={18} /> Zoom Out</button>
+                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setIsFlipped(f => !f)}><FlipHorizontal size={18} /> Flip</button>
+                  <button className="form-group button secondary flex items-center justify-center gap-2" onClick={resetViewerState}><RotateCcw size={18} /> Reset</button>
+                  <button className="form-group button secondary flex items-center justify-center gap-2 col-span-2" onClick={() => setIsPickerEnabled(p => !p)}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button>
                 </div>
-              )}
-            </div>
+                {isPickerEnabled && (
+                  <div className="flex items-center gap-2 text-sm text-gray-300 mt-3 p-2 bg-black/20 rounded-md">
+                    <div style={{ backgroundColor: pickedColor || 'transparent', width: '24px', height: '24px', border: '1px solid var(--color-border)', borderRadius: '4px' }}></div>
+                    <span className="font-mono flex-grow">{pickedColor || 'Hover to pick'} {isColorLocked && '(Locked)'}</span>
+                    {pickedColor && <button className="bg-gray-600 hover:bg-gray-500 p-1.5 rounded-md" onClick={() => navigator.clipboard.writeText(pickedColor)}><Copy size={16} /></button>}
+                  </div>
+                )}
+              </div>
             )}
 
             <div className="sidebar-section">
