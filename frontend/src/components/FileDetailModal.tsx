@@ -192,13 +192,30 @@ const FileDetailModal: React.FC = () => {
             {isImage && (
               <div className="sidebar-section viewer-controls">
                 <h4>Viewer Controls</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2)}><ZoomIn size={18} /> Zoom In</button></div>
-                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s / 1.2)}><ZoomOut size={18} /> Zoom Out</button></div>
-                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setIsFlipped(f => !f)}><FlipHorizontal size={18} /> Flip</button></div>
-                  <div className="form-group"><button className="button secondary flex items-center justify-center gap-2" onClick={resetViewerState}><RotateCcw size={18} /> Reset</button></div>
-                  <div className="form-group col-span-2"><button className="button secondary flex items-center justify-center gap-2" onClick={() => setIsPickerEnabled(p => !p)}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button></div>
+                <div className="grid-2-col">
+                  <div className="form-group">
+                    <button className="button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2
+                    )}><ZoomIn size={18} /> Zoom In</button>
+                  </div>
+                  <div className="form-group">
+                    <button className="button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s / 1.2
+                    )}><ZoomOut size={18} /> Zoom Out</button>
+                  </div>
+                  <div className="form-group">
+                    <button className="button secondary flex items-center justify-center gap-2" onClick={() => setIsFlipped(f =>
+                      !f)}><FlipHorizontal size={18} /> Flip</button>
+                  </div>
+                  <div className="form-group">
+                    <button className="button secondary flex items-center justify-center gap-2" onClick={resetViewerState}><RotateCcw
+                      size={18} /> Reset</button>
+                  </div>
                 </div>
+                <div className="form-group">
+                  <button className="button secondary flex items-center justify-center gap-2" onClick={() => setIsPickerEnabled(p => !p
+                  )}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button>
+                </div>
+
+
                 {isPickerEnabled && (
                   <div className="flex items-center gap-2 text-sm text-gray-300 mt-3 p-2 bg-black/20 rounded-md">
                     <div style={{ backgroundColor: pickedColor || 'transparent', width: '24px', height: '24px', border: '1px solid var(--color-border)', borderRadius: '4px' }}></div>
@@ -207,7 +224,8 @@ const FileDetailModal: React.FC = () => {
                   </div>
                 )}
               </div>
-            )}
+            )
+            }
 
             <div className="sidebar-section">
               <h4>Rating</h4>
@@ -231,10 +249,10 @@ const FileDetailModal: React.FC = () => {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </div >
+        </div >
+      </div >
+    </div >
   );
 };
 
