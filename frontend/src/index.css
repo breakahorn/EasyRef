@@ -342,3 +342,8 @@ body {
   scrollbar-width: none;
   /* for Firefox */
 }
+
+/* Utility for filling icons */
+.filled-favorite {
+  fill: currentColor;
+}

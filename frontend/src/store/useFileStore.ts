@@ -82,9 +82,16 @@ export const useFileStore = create<FileState>((set, get) => ({
 
       set(state => ({
         selectedFile: state.selectedFile && state.selectedFile.id === fileId 
-          ? { ...state.selectedFile, file_metadata: updatedMetadata }
+          ? { 
+              ...state.selectedFile, 
+              file_metadata: { ...state.selectedFile.file_metadata, ...updatedMetadata } 
+            }
           : state.selectedFile,
-        files: state.files.map(f => f.id === fileId ? { ...f, file_metadata: updatedMetadata } : f)
+        files: state.files.map(f => 
+          f.id === fileId 
+            ? { ...f, file_metadata: { ...f.file_metadata, ...updatedMetadata } } 
+            : f
+        )
       }));
 
     } catch (error) {

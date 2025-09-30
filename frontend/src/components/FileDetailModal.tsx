@@ -16,7 +16,7 @@ const RatingDisplay: React.FC<{ rating: number }> = ({ rating }) => {
 };
 
 const FileDetailModal: React.FC = () => {
-  const { selectedFile, selectFile, deleteFile } = useFileStore();
+  const { selectedFile, selectFile, deleteFile, updateMetadata } = useFileStore();
 
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -183,8 +183,17 @@ const FileDetailModal: React.FC = () => {
           <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar no-scrollbar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
             <div className="flex justify-between items-center text-xl font-semibold gap-4">
               <h3 title={selectedFile.name} className="truncate">{selectedFile.name}</h3>
-              <button className="bg-transparent border-none p-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 flex-shrink-0" disabled>
-                <Heart size={22} className={selectedFile.file_metadata?.is_favorite ? 'text-red-500' : ''} />
+              <button 
+                className="bg-transparent border-none p-1 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                onClick={() => updateMetadata(selectedFile.id, { is_favorite: !selectedFile.file_metadata?.is_favorite })}
+              >
+                <Heart size={22} 
+                className={selectedFile.file_metadata?.is_favorite ? 'text-red-500' : ''} 
+                style={{ 
+                  fill: selectedFile.file_metadata?.is_favorite ? '#ef4444' : 'none', 
+                  stroke: selectedFile.file_metadata?.is_favorite ? '#ef4444' : 'currentColor' 
+                }} 
+              />
               </button>
             </div>
             <p className="text-sm text-gray-400 -mt-3 mb-4">Uploaded: {new Date(selectedFile.created_at).toLocaleString()}</p>
