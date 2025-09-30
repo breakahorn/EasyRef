@@ -75,13 +75,18 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   uploadFiles: async (files: FileList) => {
     set({ isLoading: true });
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i]);
+    }
+
     try {
-      const uploadPromises = Array.from(files).map(file => {
-        const singleFormData = new FormData();
-        singleFormData.append('file', file);
-        return axios.post(`${API_BASE_URL}/files/upload`, singleFormData);
+      await axios.post(`${API_BASE_URL}/files/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      await Promise.all(uploadPromises);
+      // After upload, refresh the entire file list
       await get().fetchFiles();
     } catch (error) {
       console.error("Error uploading files:", error);

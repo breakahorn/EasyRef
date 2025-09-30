@@ -73,26 +73,36 @@ async def get_storage_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path, headers={"Access-Control-Allow-Origin": "*"})
 
-@app.post("/files/upload", response_model=schemas.File)
-def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    file_location = os.path.join(STORAGE_PATH, file.filename)
-    if ".." in file.filename: raise HTTPException(status_code=400, detail="Invalid filename.")
-    try:
-        with open(file_location, "wb+") as file_object:
-            shutil.copyfileobj(file.file, file_object)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
-    
-    db_file = models.File(name=file.filename, path=file_location)
-    if file.filename.lower().endswith(VIDEO_EXTENSIONS):
-        video_meta = _get_video_metadata(file_location)
-        if video_meta:
-            db_file.file_metadata = models.Metadata(**video_meta)
+@app.post("/files/upload", response_model=List[schemas.File])
+def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+    created_files = []
+    for file in files:
+        file_location = os.path.join(STORAGE_PATH, file.filename)
+        if ".." in file.filename: 
+            # Skip this file or raise an exception for the whole batch
+            print(f"Skipping invalid filename: {file.filename}")
+            continue
 
-    db.add(db_file)
-    db.commit()
-    db.refresh(db_file)
-    return db_file
+        try:
+            with open(file_location, "wb+") as file_object:
+                shutil.copyfileobj(file.file, file_object)
+        except Exception as e:
+            # Decide how to handle partial failures
+            print(f"Could not save file {file.filename}: {e}")
+            continue
+        
+        db_file = models.File(name=file.filename, path=file_location)
+        if file.filename.lower().endswith(VIDEO_EXTENSIONS):
+            video_meta = _get_video_metadata(file_location)
+            if video_meta:
+                db_file.file_metadata = models.Metadata(**video_meta)
+
+        db.add(db_file)
+        db.commit()
+        db.refresh(db_file)
+        created_files.append(db_file)
+        
+    return created_files
 
 @app.get("/files", response_model=List[schemas.File])
 def get_files(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

@@ -114,7 +114,7 @@ const FileDetailModal: React.FC = () => {
     const imageRatio = image.naturalWidth / image.naturalHeight;
     let drawWidth, drawHeight, drawX, drawY;
 
-    if (containerRatio > imageRatio) {
+    if (containerRatio > imageRatio) { // Reverted back to > to simulate 'contain'
       drawHeight = canvas.height;
       drawWidth = drawHeight * imageRatio;
     } else {
@@ -208,7 +208,7 @@ const FileDetailModal: React.FC = () => {
             {isImage ? (
               <canvas ref={canvasRef} onMouseMove={handleColorPick} onClick={handleColorLockToggle} style={{ cursor: isPickerEnabled ? 'crosshair' : (isPanning ? 'grabbing' : 'grab') }} />
             ) : isVideo ? (
-              <video src={`${API_BASE_URL}/${selectedFile.path.replace(/\\/g, '/').replace(/^\.?\//, '')}`} controls autoPlay loop className="max-w-full max-h-full object-contain" />
+              <video src={`${API_BASE_URL}/${selectedFile.path.replace(/\\/g, '/').replace(/^\.?\//, '')}`} controls autoPlay loop className="w-full h-full object-contain" />
             ) : (
               <p>Unsupported file type</p>
             )}
