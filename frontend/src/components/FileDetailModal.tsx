@@ -153,49 +153,46 @@ const FileDetailModal: React.FC = () => {
           </div>
 
           {/* Details & Actions Area */}
-          <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2">
-            <div className="flex items-start justify-between text-xl font-semibold"><h3 title={selectedFile.name} className="pr-4">{selectedFile.name}</h3></div>
-            <p className="text-sm text-gray-400 -mt-3 mb-4">Uploaded: {new Date(selectedFile.created_at).toLocaleString()}</p>
-            {/* Favorite Button */}
-            <div className="flex justify-center">
-                <button className="bg-transparent border-none p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-700 transition-colors disabled:opacity-50" disabled>
-                    <Heart size={22} className={selectedFile.file_metadata?.is_favorite ? 'text-red-500' : ''} />
-                </button>
+          <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
+            <div className="flex justify-between items-center text-xl font-semibold gap-4">
+              <h3 title={selectedFile.name} className="truncate">{selectedFile.name}</h3>
+              <button className="bg-transparent border-none p-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 flex-shrink-0" disabled>
+                <Heart size={22} className={selectedFile.file_metadata?.is_favorite ? 'text-red-500' : ''} />
+              </button>
             </div>
+            <p className="text-sm text-gray-400 -mt-3 mb-4">Uploaded: {new Date(selectedFile.created_at).toLocaleString()}</p>
 
-            {isImage && (
-              <div className="p-4 bg-gray-700 rounded-lg">
-                  <h4 className="text-base font-semibold text-gray-300 mb-3 flex items-center gap-2">Viewer Controls</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md flex items-center justify-center gap-2 text-sm transition-colors" onClick={() => setScale(s => s * 1.2)}><ZoomIn size={18} /> Zoom In</button>
-                    <button className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md flex items-center justify-center gap-2 text-sm transition-colors" onClick={() => setScale(s => s / 1.2)}><ZoomOut size={18} /> Zoom Out</button>
-                    <button className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md flex items-center justify-center gap-2 text-sm transition-colors" onClick={() => setIsFlipped(f => !f)}><FlipHorizontal size={18} /> Flip</button>
-                    <button className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md flex items-center justify-center gap-2 text-sm transition-colors" onClick={resetViewerState}><RotateCcw size={18} /> Reset</button>
-                    <button className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md flex items-center justify-center gap-2 text-sm transition-colors col-span-2" onClick={() => setIsPickerEnabled(p => !p)}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button>
-                  </div>
-                  {isPickerEnabled && (
-                    <div className="flex items-center gap-2 text-sm text-gray-300 mt-3 p-2 bg-black/20 rounded-md">
-                      <div style={{ backgroundColor: pickedColor || 'transparent', width: '24px', height: '24px', border: '1px solid var(--color-border)', borderRadius: '4px' }}></div>
-                      <span className="font-mono flex-grow">{pickedColor || 'Hover to pick'} {isColorLocked && '(Locked)'}</span>
-                      {pickedColor && <button className="bg-gray-600 hover:bg-gray-500 p-1.5 rounded-md" onClick={() => navigator.clipboard.writeText(pickedColor)}><Copy size={16} /></button>}
-                    </div>
-                  )}
-              </div>
+            {isImage && (<div className="sidebar-section">
+              <h4>Viewer Controls</h4>
+                              <div className="grid grid-cols-2 gap-2">
+                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2)}><ZoomIn size={18} /> Zoom In</button>
+                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s / 1.2)}><ZoomOut size={18} /> Zoom Out</button>
+                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={() => setIsFlipped(f => !f)}><FlipHorizontal size={18} /> Flip</button>
+                                <button className="form-group button secondary flex items-center justify-center gap-2" onClick={resetViewerState}><RotateCcw size={18} /> Reset</button>
+                                <button className="form-group button secondary flex items-center justify-center gap-2 col-span-2" onClick={() => setIsPickerEnabled(p => !p)}><Pipette size={18} /> {isPickerEnabled ? 'Disable' : 'Enable'} Color Picker</button>
+                              </div>              {isPickerEnabled && (
+                <div className="flex items-center gap-2 text-sm text-gray-300 mt-3 p-2 bg-black/20 rounded-md">
+                  <div style={{ backgroundColor: pickedColor || 'transparent', width: '24px', height: '24px', border: '1px solid var(--color-border)', borderRadius: '4px' }}></div>
+                  <span className="font-mono flex-grow">{pickedColor || 'Hover to pick'} {isColorLocked && '(Locked)'}</span>
+                  {pickedColor && <button className="bg-gray-600 hover:bg-gray-500 p-1.5 rounded-md" onClick={() => navigator.clipboard.writeText(pickedColor)}><Copy size={16} /></button>}
+                </div>
+              )}
+            </div>
             )}
 
-            <div className="p-4 bg-gray-900/50 rounded-lg">
-              <h4 className="text-base font-semibold text-gray-300 mb-3 flex items-center gap-2">Rating</h4>
+            <div className="sidebar-section">
+              <h4>Rating</h4>
               <RatingDisplay rating={selectedFile.file_metadata?.rating || 0} />
             </div>
-            <div className="p-4 bg-gray-900/50 rounded-lg">
-              <h4 className="text-base font-semibold text-gray-300 mb-3 flex items-center gap-2"><TagIcon size={18} /> Tags</h4>
+            <div className="sidebar-section">
+              <h4><TagIcon size={16} /> Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedFile.tags?.length > 0 ? selectedFile.tags.map(tag => <span key={tag.id} className="bg-indigo-500/20 text-indigo-300 text-xs font-medium px-2.5 py-1 rounded-full">{tag.name}</span>) : <p className="text-gray-500 text-sm">No tags yet.</p>}
               </div>
             </div>
-            <div className="p-4 bg-gray-900/50 rounded-lg">
-              <h4 className="text-base font-semibold text-gray-300 mb-3 flex items-center gap-2"><MessageSquare size={18} /> Notes</h4>
-              <p className="bg-gray-900 p-3 rounded-md text-sm text-gray-300 min-h-[6rem]">{selectedFile.file_metadata?.notes || 'No notes yet.'}</p>
+            <div className="sidebar-section">
+              <h4><MessageSquare size={16} /> Notes</h4>
+              <p className="text-sm text-gray-300 min-h-[6rem]">{selectedFile.file_metadata?.notes || 'No notes yet.'}</p>
             </div>
             <div className="mt-auto pt-4 border-t border-gray-700">
               <h4 className="font-semibold text-red-500/80">Danger Zone</h4>

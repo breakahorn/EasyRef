@@ -76,7 +76,7 @@ body {
 
 /* --- Sidebar Styles --- */
 .sidebar {
-  width: 280px;
+  width: 294px;
   flex-shrink: 0;
   background-color: var(--color-panel-1);
   padding: 2rem 1.5rem;
@@ -150,6 +150,8 @@ body {
 .form-group button.secondary {
     background-color: var(--color-panel-2);
     color: var(--color-text-primary);
+    border: none;
+    border-radius: 12px;
 }
 
 .form-group button.secondary:hover {
