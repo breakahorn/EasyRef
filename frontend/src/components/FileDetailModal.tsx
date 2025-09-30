@@ -182,7 +182,7 @@ const FileDetailModal: React.FC = () => {
                 <p>Unsupported file type</p>
             )}
           </div>
-          <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
+          <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar no-scrollbar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
             <div className="flex justify-between items-center text-xl font-semibold gap-4">
               <h3 title={selectedFile.name} className="truncate">{selectedFile.name}</h3>
               <button className="bg-transparent border-none p-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 flex-shrink-0" disabled>
