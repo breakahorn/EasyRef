@@ -110,4 +110,30 @@ export const useFileStore = create<FileState>((set, get) => ({
       console.error(`Error deleting file ${fileId}:`, error);
     }
   },
+
+  addTag: async (fileId: number, tagName: string) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/files/${fileId}/tags`, { name: tagName });
+      const updatedFile = response.data;
+      set(state => ({
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId ? updatedFile : state.selectedFile,
+        files: state.files.map(f => f.id === fileId ? updatedFile : f),
+      }));
+    } catch (error) {
+      console.error(`Error adding tag to file ${fileId}:`, error);
+    }
+  },
+
+  removeTag: async (fileId: number, tagId: number) => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/files/${fileId}/tags/${tagId}`);
+      const updatedFile = response.data;
+      set(state => ({
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId ? updatedFile : state.selectedFile,
+        files: state.files.map(f => f.id === fileId ? updatedFile : f),
+      }));
+    } catch (error) {
+      console.error(`Error removing tag from file ${fileId}:`, error);
+    }
+  },
 }));

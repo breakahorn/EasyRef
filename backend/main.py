@@ -144,6 +144,45 @@ def get_random_file(db: Session = Depends(get_db)):
     if not random_file: raise HTTPException(status_code=404, detail="No files found in the library")
     return random_file
 
+@app.post("/files/{file_id}/tags", response_model=schemas.File)
+def add_tag_to_file(file_id: int, tag: schemas.TagCreate, db: Session = Depends(get_db)):
+    db_file = db.query(models.File).options(joinedload(models.File.tags), joinedload(models.File.file_metadata)).filter(models.File.id == file_id).first()
+    if db_file is None:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Find existing tag or create a new one
+    db_tag = db.query(models.Tag).filter(func.lower(models.Tag.name) == tag.name.lower()).first()
+    if not db_tag:
+        db_tag = models.Tag(name=tag.name)
+        db.add(db_tag)
+        db.commit()
+        db.refresh(db_tag)
+
+    if db_tag not in db_file.tags:
+        db_file.tags.append(db_tag)
+        db.commit()
+        db.refresh(db_file)
+
+    return db_file
+
+@app.delete("/files/{file_id}/tags/{tag_id}", response_model=schemas.File)
+def remove_tag_from_file(file_id: int, tag_id: int, db: Session = Depends(get_db)):
+    db_file = db.query(models.File).options(joinedload(models.File.tags), joinedload(models.File.file_metadata)).filter(models.File.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    tag_to_remove = db.query(models.Tag).filter(models.Tag.id == tag_id).first()
+    if not tag_to_remove:
+        raise HTTPException(status_code=404, detail="Tag not found")
+
+    if tag_to_remove in db_file.tags:
+        db_file.tags.remove(tag_to_remove)
+        db.commit()
+        db.refresh(db_file)
+
+    return db_file
+
+
 @app.delete("/files/{file_id}", status_code=204)
 def delete_file(file_id: int, db: Session = Depends(get_db)):
     db_file = db.query(models.File).filter(models.File.id == file_id).first()

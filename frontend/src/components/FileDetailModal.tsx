@@ -1,22 +1,36 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFileStore } from '../store/useFileStore';
-import { X, Star, Heart, Tag as TagIcon, MessageSquare, ZoomIn, ZoomOut, RotateCcw, FlipHorizontal, Pipette, Copy } from 'lucide-react';
+import { X, Star, Heart, Tag as TagIcon, MessageSquare, ZoomIn, ZoomOut, RotateCcw, FlipHorizontal, Pipette, Copy, SlidersHorizontal, AlertTriangle } from 'lucide-react';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
 
-const RatingDisplay: React.FC<{ rating: number }> = ({ rating }) => {
+const RatingEditor: React.FC<{ rating: number; onRatingChange: (newRating: number) => void; }> = ({ rating, onRatingChange }) => {
+  const [hoverRating, setHoverRating] = useState(0);
+
   return (
-    <div className="flex gap-1">
-      {[...Array(10)].map((_, i) => <Star key={i + 1} size={22} className={`${i + 1 <= rating ? 'text-yellow-400' : 'text-gray-500'}`} />)}
+    <div className="flex gap-1" onMouseLeave={() => setHoverRating(0)}>
+      {[...Array(10)].map((_, i) => {
+        const ratingValue = i + 1;
+        return (
+          <Star
+            key={ratingValue}
+            size={22}
+            className={`cursor-pointer transition-colors ${ratingValue <= (hoverRating || rating) ? 'text-yellow-400' : 'text-gray-500'}`}
+            onMouseEnter={() => setHoverRating(ratingValue)}
+            onClick={() => onRatingChange(ratingValue)}
+            style={{ fill: ratingValue <= (hoverRating || rating) ? 'currentColor' : 'none' }}
+          />
+        );
+      })}
     </div>
   );
 };
 
 const FileDetailModal: React.FC = () => {
-  const { selectedFile, selectFile, deleteFile, updateMetadata } = useFileStore();
+  const { selectedFile, selectFile, deleteFile, updateMetadata, addTag, removeTag } = useFileStore();
 
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -27,6 +41,19 @@ const FileDetailModal: React.FC = () => {
   const [isPickerEnabled, setIsPickerEnabled] = useState(false);
   const [pickedColor, setPickedColor] = useState<string | null>(null);
   const [isColorLocked, setIsColorLocked] = useState(false);
+
+  // Notes editing state
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesText, setNotesText] = useState("");
+
+  // Tag editing state
+  const [newTagName, setNewTagName] = useState("");
+
+  useEffect(() => {
+    if (selectedFile) {
+      setNotesText(selectedFile.file_metadata?.notes || "");
+    }
+  }, [selectedFile]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -39,6 +66,13 @@ const FileDetailModal: React.FC = () => {
     setIsPickerEnabled(false);
     setPickedColor(null);
   }, []);
+
+  // This effect should now only run when the FILE ID changes.
+  useEffect(() => {
+    if (selectedFile) {
+      resetViewerState();
+    }
+  }, [selectedFile?.id, resetViewerState]);
 
   const fileExtension = selectedFile?.name.split('.').pop()?.toLowerCase() || '';
   const isImage = IMAGE_EXTENSIONS.includes(fileExtension);
@@ -180,27 +214,27 @@ const FileDetailModal: React.FC = () => {
               <p>Unsupported file type</p>
             )}
           </div>
-          <div className="w-96 flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar no-scrollbar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
+          <div className="flex-shrink-0 h-full flex flex-col gap-4 overflow-y-auto pr-2 sidebar no-scrollbar" style={{ borderRight: 'none', borderLeft: '1px solid var(--color-border)' }}>
             <div className="flex justify-between items-center text-xl font-semibold gap-4">
               <h3 title={selectedFile.name} className="truncate">{selectedFile.name}</h3>
-              <button 
+              <button
                 className="bg-transparent border-none p-1 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
                 onClick={() => updateMetadata(selectedFile.id, { is_favorite: !selectedFile.file_metadata?.is_favorite })}
               >
-                <Heart size={22} 
-                className={selectedFile.file_metadata?.is_favorite ? 'text-red-500' : ''} 
-                style={{ 
-                  fill: selectedFile.file_metadata?.is_favorite ? '#ef4444' : 'none', 
-                  stroke: selectedFile.file_metadata?.is_favorite ? '#ef4444' : 'currentColor' 
-                }} 
-              />
+                <Heart size={22}
+                  className={selectedFile.file_metadata?.is_favorite ? 'text-red-500' : ''}
+                  style={{
+                    fill: selectedFile.file_metadata?.is_favorite ? '#ef4444' : 'none',
+                    stroke: selectedFile.file_metadata?.is_favorite ? '#ef4444' : 'currentColor'
+                  }}
+                />
               </button>
             </div>
-            <p className="text-sm text-gray-400 -mt-3 mb-4">Uploaded: {new Date(selectedFile.created_at).toLocaleString()}</p>
+            <p className="text-sm text-gray-400 uploaded-date">Uploaded: {new Date(selectedFile.created_at).toLocaleString()}</p>
 
             {isImage && (
               <div className="sidebar-section viewer-controls">
-                <h4>Viewer Controls</h4>
+                <h4><SlidersHorizontal size={16} /> Viewer Controls</h4>
                 <div className="grid-2-col">
                   <div className="form-group">
                     <button className="button secondary flex items-center justify-center gap-2" onClick={() => setScale(s => s * 1.2
@@ -237,21 +271,73 @@ const FileDetailModal: React.FC = () => {
             }
 
             <div className="sidebar-section">
-              <h4>Rating</h4>
-              <RatingDisplay rating={selectedFile.file_metadata?.rating || 0} />
+              <h4><Star size={16} /> Rating</h4>
+              <RatingEditor
+                rating={selectedFile.file_metadata?.rating || 0}
+                onRatingChange={(newRating) => updateMetadata(selectedFile.id, { rating: newRating })}
+              />
             </div>
             <div className="sidebar-section">
               <h4><TagIcon size={16} /> Tags</h4>
-              <div className="flex flex-wrap gap-2">
-                {selectedFile.tags?.length > 0 ? selectedFile.tags.map(tag => <span key={tag.id} className="bg-indigo-500/20 text-indigo-300 text-xs font-medium px-2.5 py-1 rounded-full">{tag.name}</span>) : <p className="text-gray-500 text-sm">No tags yet.</p>}
+
+              {selectedFile.tags?.length > 0 ?
+                <div className="flex flex-wrap items-center tag-list-container">
+                  {selectedFile.tags.map(tag => (
+
+                    <span key={tag.id} className="tag-item">
+                      {tag.name}
+                      <button onClick={() => removeTag(selectedFile.id, tag.id)} className="tag-remove-btn">
+                        <X size={12} />
+                      </button>
+                    </span>))}
+                </div>
+                : <p className="text-gray-500 text-sm">No tags yet.</p>}
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (newTagName.trim()) {
+                  addTag(selectedFile.id, newTagName.trim());
+                  setNewTagName("");
+                }
+              }} className="tag-add-form">
+                <input
+                  type="text"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  placeholder="Add a tag..."
+                  className="tag-input-form"
+                />
+              </form>
+            </div>
+
+            <div className="sidebar-section">
+              <div>
+                <h4 className="text-base font-semibold text-gray-300 mb-3 flex items-center gap-2"><MessageSquare size={16} /> Notes</h4>
+                {isEditingNotes ? (
+                  <textarea
+                    className="notes-textarea"
+                    value={notesText}
+                    onChange={(e) => setNotesText(e.target.value)}
+                    onBlur={() => {
+                      setIsEditingNotes(false);
+                      updateMetadata(selectedFile.id, { notes: notesText });
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <p
+                    className="w-full h-32 text-sm text-gray-300 bg-gray-900 p-3 rounded-md cursor-pointer hover:bg-gray-800 overflow-y-auto"
+                    onClick={() => setIsEditingNotes(true)}
+                  >
+                    {selectedFile.file_metadata?.notes || <span className="text-gray-500">Click to add notes...</span>}
+                  </p>
+                )}
               </div>
             </div>
+
+
             <div className="sidebar-section">
-              <h4><MessageSquare size={16} /> Notes</h4>
-              <p className="text-sm text-gray-300 min-h-[6rem]">{selectedFile.file_metadata?.notes || 'No notes yet.'}</p>
-            </div>
-            <div className="mt-auto pt-4 border-t border-gray-700">
-              <h4 className="font-semibold text-red-500/80">Danger Zone</h4>
+              <h4 className="font-semibold text-red-500/80"><AlertTriangle size={16} /> Danger Zone</h4>
               <div className="form-group">
                 <button onClick={handleDelete} className="button danger flex items-center justify-center gap-2">
                   Delete this file
