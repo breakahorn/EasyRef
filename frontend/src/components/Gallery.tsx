@@ -43,14 +43,21 @@ const DraggableGalleryItem = ({ file }) => {
       const initialWidth = 250;
       const aspectRatio = img.naturalWidth / img.naturalHeight;
       addItemToBoard(activeBoardId, file.id, {
+        pos_x: 50, // Default position
+        pos_y: 50, // Default position
         width: initialWidth,
         height: initialWidth / aspectRatio,
+        rotation: 0, // Default rotation
       });
     };
     img.onerror = () => {
+      // Fallback for if image fails to load, add with default size
       addItemToBoard(activeBoardId, file.id, {
+        pos_x: 50,
+        pos_y: 50,
         width: 200,
         height: 200,
+        rotation: 0,
       });
     }
   };
@@ -84,7 +91,14 @@ const DraggableGalleryItem = ({ file }) => {
       style={{ opacity: isDragging ? 0.5 : 1 }}
       onClick={() => selectFile(file)}
     >
-      {renderThumbnail()}
+      <>
+        {activeBoardId && isImage && (
+          <button className="add-to-board-btn" onClick={handleAddToBoard}>
+            <Plus size={20} />
+          </button>
+        )}
+        {renderThumbnail()}
+      </>
       {isVideo && file.file_metadata && (
         <div className="video-info-overlay">
           <span>{formatDuration(file.file_metadata.duration)}</span>

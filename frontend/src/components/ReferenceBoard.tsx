@@ -1,40 +1,126 @@
-import React, { useRef, useState } from 'react';
-import { Stage, Layer } from 'react-konva';
+import React, { useRef, useState, useEffect } from 'react';
+import { Stage, Layer, Transformer } from 'react-konva';
 import Konva from 'konva';
+import { useDrop } from 'react-dnd';
+import { useBoardStore } from '../store/useBoardStore';
+import BoardImage from './BoardImage';
+import ContextMenu from './ContextMenu';
+import { ItemTypes } from './Gallery';
 
 const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
+  const { activeBoardId, addItemToBoard, selectedItemId, setSelectedItemId, updateBoardItem, deleteBoardItem } = useBoardStore();
   const stageRef = useRef<Konva.Stage>(null);
+  const layerRef = useRef<Konva.Layer>(null);
+  const transformerRef = useRef<Konva.Transformer>(null);
+
+  const [menu, setMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const lastPointerPosition = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (transformerRef.current && layerRef.current) {
+      const selectedNode = layerRef.current.findOne(`#${selectedItemId}`);
+      transformerRef.current.nodes(selectedNode ? [selectedNode] : []);
+    }
+  }, [selectedItemId]);
+
+  const [, drop] = useDrop(() => ({
+    accept: ItemTypes.IMAGE,
+    drop: (item: { id: number, path: string }, monitor) => {
+      if (!activeBoardId || !stageRef.current) return;
+      const dropPosition = monitor.getClientOffset();
+      const stage = stageRef.current;
+      if (!dropPosition) return;
+      const transform = stage.getAbsoluteTransform().copy().invert();
+      const pos = transform.point(dropPosition);
+      addItemToBoard(activeBoardId, item.id, { pos_x: pos.x, pos_y: pos.y });
+    },
+  }), [activeBoardId]);
+
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    const nodeId = parseInt(node.id(), 10);
+    if (isNaN(nodeId)) return;
+    updateBoardItem(nodeId, {
+      pos_x: node.x(),
+      pos_y: node.y(),
+    });
+  };
+
+  const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target;
+    const nodeId = parseInt(node.id(), 10);
+    if (isNaN(nodeId)) return;
+    updateBoardItem(nodeId, {
+      pos_x: node.x(),
+      pos_y: node.y(),
+      rotation: node.rotation(),
+      width: node.width() * node.scaleX(),
+      height: node.height() * node.scaleY(),
+    });
+    node.scaleX(1);
+    node.scaleY(1);
+  };
+
+  const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>) => {
+    e.evt.preventDefault();
+    const itemId = parseInt(e.target.id(), 10);
+    if (isNaN(itemId)) return;
+    setSelectedItemId(itemId);
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pointerPos = stage.getPointerPosition();
+    if (!pointerPos) return;
+    setMenu({ x: pointerPos.x, y: pointerPos.y, itemId });
+  };
+
+  const getMinMaxZIndex = () => {
+    const zIndexes = items.map(i => i.z_index);
+    return { min: Math.min(0, ...zIndexes), max: Math.max(0, ...zIndexes) };
+  };
+
+  const handleResetRotation = () => {
+    if (menu) updateBoardItem(menu.itemId, { rotation: 0 });
+    setMenu(null);
+  };
+
+  const handleBringToFront = () => {
+    if (menu) {
+      const { max } = getMinMaxZIndex();
+      updateBoardItem(menu.itemId, { z_index: max + 1 });
+    }
+    setMenu(null);
+  };
+
+  const handleSendToBack = () => {
+    if (menu) {
+      const { min } = getMinMaxZIndex();
+      updateBoardItem(menu.itemId, { z_index: min - 1 });
+    }
+    setMenu(null);
+  };
+
+  const handleDelete = () => {
+    if (menu) deleteBoardItem(menu.itemId);
+    setMenu(null);
+  };
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
     const stage = stageRef.current;
     if (!stage) return;
-
     const scaleBy = 1.05;
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
     if (!pointer) return;
-
-    const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
-    };
-
+    const mousePointTo = { x: (pointer.x - stage.x()) / oldScale, y: (pointer.y - stage.y()) / oldScale };
     const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-    
     stage.scale({ x: newScale, y: newScale });
-
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    };
+    const newPos = { x: pointer.x - mousePointTo.x * newScale, y: pointer.y - mousePointTo.y * newScale };
     stage.position(newPos);
   };
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Middle mouse button for panning
     if (e.evt.button === 1 && e.target === e.target.getStage()) {
       setIsPanning(true);
       const stage = stageRef.current;
@@ -67,19 +153,54 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
   };
 
   return (
-    <div className="reference-board" onContextMenu={(e) => e.preventDefault()}>
+    <div ref={drop} className="reference-board" onContextMenu={(e) => e.preventDefault()}>
+      {menu && (
+        <ContextMenu 
+          x={menu.x} 
+          y={menu.y} 
+          onResetRotation={handleResetRotation}
+          onBringToFront={handleBringToFront}
+          onSendToBack={handleSendToBack}
+          onDelete={handleDelete}
+        />
+      )}
       <Stage
         ref={stageRef}
-        width={window.innerWidth - 324} // Adjust for sidebar width
-        height={window.innerHeight - 57} // Adjust for navbar height
+        width={window.innerWidth - 324}
+        height={window.innerHeight - 57}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onClick={(e) => {
+          const clickedOnEmpty = e.target === e.target.getStage();
+          if (clickedOnEmpty) {
+            setSelectedItemId(null);
+            setMenu(null);
+          }
+        }}
       >
-        <Layer>
-          {/* Board items will be rendered here in the next step */}
+        <Layer ref={layerRef}>
+          {items.map(item => (
+            <BoardImage 
+              key={item.id} 
+              item={item} 
+              onSelect={() => setSelectedItemId(item.id)}
+              onDragEnd={handleDragEnd}
+              onContextMenu={handleContextMenu}
+            />
+          ))}
+          <Transformer 
+            ref={transformerRef} 
+            onTransformEnd={handleTransformEnd}
+            boundBoxFunc={(oldBox, newBox) => {
+              if (newBox.width < 10 || newBox.height < 10) {
+                return oldBox;
+              }
+              return newBox;
+            }}
+          />
         </Layer>
       </Stage>
     </div>
