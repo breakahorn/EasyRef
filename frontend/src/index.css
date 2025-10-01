@@ -56,7 +56,8 @@ body {
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
-  justify-content: space-between; /* This was missing from my previous state, adding it back */
+  justify-content: space-between;
+  /* This was missing from my previous state, adding it back */
   gap: 1.5rem;
 }
 
@@ -78,13 +79,15 @@ body {
 }
 
 .app-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--color-text-primary);
-    font-size: 1.25rem; /* 20px */
-    font-weight: 700; /* bold */
-    text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-primary);
+  font-size: 1.25rem;
+  /* 20px */
+  font-weight: 700;
+  /* bold */
+  text-decoration: none;
 }
 
 .main-content-wrapper {
@@ -386,6 +389,13 @@ body {
   /* for Firefox */
 }
 
+/* Remove border only from the projects header h4 */
+.sidebar-section h4.no-border {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
 /* --- Tag Styles --- */
 .tag-item {
   display: inline-flex;
@@ -426,7 +436,7 @@ body {
 
 /* Utility for filling icons */
 .filled-favorite {
-    fill: currentColor;
+  fill: currentColor;
 }
 
 /* --- Board Sidebar --- */
@@ -434,6 +444,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0.2rem;
+}
+
+.projects-header h4 {
+  margin: 0;
+  flex-grow: 1;
+  /* Make h4 fill available space */
 }
 
 .new-project-btn {
@@ -451,6 +470,10 @@ body {
   color: var(--color-text-primary);
 }
 
+.board-list {
+  padding-top: 0.5rem;
+}
+
 .board-list ul {
   list-style: none;
   padding: 0;
@@ -463,8 +486,8 @@ body {
 .board-list li {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0.6rem 0.75rem;
+  align-items: baseline; /* Align by text baseline */
+  padding: 0.7rem 0.75rem; /* Adjust padding for better visual balance */
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
@@ -502,12 +525,15 @@ body {
   color: var(--color-text-secondary);
   padding: 0.25rem;
   border-radius: 6px;
-  display: none; /* Hidden by default, shown on li:hover */
-  transition: background-color 0.2s, color 0.2s;
+  opacity: 0;
+  /* Hidden by default */
+  visibility: hidden;
+  transition: opacity 0.2s, background-color 0.2s, color 0.2s;
 }
 
 .board-list li:hover .menu-btn {
-  display: inline-flex;
+  opacity: 1;
+  visibility: visible;
 }
 
 .menu-btn:hover {
@@ -530,7 +556,7 @@ body {
   background-color: var(--color-panel-1);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   width: 180px;
   padding: 0.5rem;
   display: flex;

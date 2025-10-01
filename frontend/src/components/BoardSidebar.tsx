@@ -56,7 +56,7 @@ const BoardSidebar: React.FC = () => {
     setMenuOpenId(null);
   };
 
-  const handleStartRename = (board: {id: number, name: string}) => {
+  const handleStartRename = (board: { id: number, name: string }) => {
     setEditingId(board.id);
     setEditingName(board.name);
     setMenuOpenId(null);
@@ -71,7 +71,7 @@ const BoardSidebar: React.FC = () => {
     setEditingName('');
   };
 
-  const renderProjectItem = (board: {id: number, name: string}) => {
+  const renderProjectItem = (board: { id: number, name: string }) => {
     if (editingId === board.id) {
       return (
         <form onSubmit={handleRenameSubmit} className="rename-form">
@@ -92,58 +92,60 @@ const BoardSidebar: React.FC = () => {
     <aside className="sidebar">
       <div className="sidebar-section">
         <div className="projects-header">
-          <h4><LayoutDashboard size={18} /> Projects</h4>
+          <h4 className="no-border"><LayoutDashboard size={18} /> Projects</h4>
           <button onClick={handleAddNewBoard} className="new-project-btn">
             <Plus size={16} />
           </button>
         </div>
-      </div>
-      <div className="sidebar-section board-list">
-        {boards.length > 0 ? (
-          <ul>
-            {boards.map((board) => (
-              <li
-                key={board.id}
-                className={`
+
+        <div className="board-list">
+          {boards.length > 0 ? (
+            <ul>
+              {boards.map((board) => (
+                <li
+                  key={board.id}
+                  className={`
                   ${board.id === activeBoardId ? 'active' : ''}
                   ${menuOpenId === board.id ? 'menu-open' : ''}
                 `}
-                onClick={() => editingId !== board.id && setActiveBoard(board.id)}
-              >
-                {renderProjectItem(board)}
-                {editingId !== board.id && (
-                  <div className="project-item-menu-container">
-                    <button 
-                      className="menu-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpenId(menuOpenId === board.id ? null : board.id);
-                      }}
-                    >
-                      <MoreHorizontal size={16} />
-                    </button>
-                    {menuOpenId === board.id && (
-                      <div className="context-menu" ref={menuRef} style={{ position: 'absolute', right: '2rem', top: '0'}}>
-                        <button onClick={() => handleStartRename(board)}>
-                          <Edit size={14} /> Rename
-                        </button>
-                        <button onClick={() => handleDeleteBoard(board.id, board.name)} className="delete">
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
+                  onClick={() => editingId !== board.id && setActiveBoard(board.id)}
+                >
+                  {renderProjectItem(board)}
+                  {editingId !== board.id && (
+                    <div className="project-item-menu-container">
+                      <button
+                        className="menu-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpenId(menuOpenId === board.id ? null : board.id);
+                        }}
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+                      {menuOpenId === board.id && (
+                        <div className="context-menu" ref={menuRef} style={{ position: 'absolute', right: '2rem', top: '0' }}>
+                          <button onClick={() => handleStartRename(board)}>
+                            <Edit size={14} /> Rename
+                          </button>
+                          <button onClick={() => handleDeleteBoard(board.id, board.name)} className="delete">
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
             <div className="empty-board-list">
               <p>No projects yet.</p>
               <p>Create your first one to get started!</p>
             </div>
-        )}
+          )}
+        </div>
       </div>
+
     </aside>
   );
 };
