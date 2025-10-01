@@ -11,7 +11,7 @@ const Navbar = () => {
       </NavLink>
 
       {/* Navigation Links */}
-      <div className="flex items-center gap-6">
+      <div className="nav-links">
         <NavLink
           to="/"
           className={({ isActive }) =>
@@ -20,7 +20,14 @@ const Navbar = () => {
         >
           Gallery
         </NavLink>
-        {/* <NavLink to="/board">Reference Board</NavLink> */}
+        <NavLink
+          to="/board"
+          className={({ isActive }) =>
+            `font-medium transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`
+          }
+        >
+          Reference Board
+        </NavLink>
       </div>
     </nav>
   );

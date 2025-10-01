@@ -56,7 +56,14 @@ body {
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
+  justify-content: space-between; /* This was missing from my previous state, adding it back */
   gap: 1.5rem;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
 }
 
 .main-nav a:not(.app-brand) {
