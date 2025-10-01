@@ -1,47 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFileStore } from '../store/useFileStore';
 import { Search, Shuffle, Star, XCircle } from 'lucide-react';
+import TagInput from './TagInput'; // Import the new component
 
 const GallerySidebar: React.FC = () => {
   const { searchFiles, fetchRandomFile, fetchFiles } = useFileStore();
-  
-  const [tags, setTags] = useState('');
+
+  const [selectedTags, setSelectedTags] = useState<{ id: number, name: string }[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [fileType, setFileType] = useState('all');
+  const [tagSearchMode, setTagSearchMode] = useState('or'); // 'or' or 'and'
 
-  const isInitialMount = useRef(true);
-
+  // Debounced search effect
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
     const handler = setTimeout(() => {
       const params = {
-        tags: tags || undefined,
+        tags: selectedTags.map(t => t.name).join(',') || undefined,
+        tag_search_mode: selectedTags.length > 1 ? tagSearchMode : undefined,
         min_rating: minRating > 0 ? minRating : undefined,
         is_favorite: isFavorite || undefined,
         file_type: fileType === 'all' ? undefined : fileType,
       };
-      searchFiles(params);
+      if (Object.values(params).some(v => v !== undefined)) {
+        searchFiles(params);
+      } else {
+        fetchFiles(); // Fetch all if no filters
+      }
     }, 500);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [tags, minRating, isFavorite, fileType, searchFiles]);
+    return () => clearTimeout(handler);
+  }, [selectedTags, minRating, isFavorite, fileType, tagSearchMode]);
 
   const handleClear = () => {
-    const hadFilters = tags || minRating > 0 || isFavorite || fileType !== 'all';
-    setTags('');
+    setSelectedTags([]);
     setMinRating(0);
     setIsFavorite(false);
     setFileType('all');
-    if (hadFilters) {
-        fetchFiles();
-    }
+    setTagSearchMode('or');
   };
 
   return (
@@ -49,6 +45,22 @@ const GallerySidebar: React.FC = () => {
       <div className="sidebar-section">
         <h4><Search size={18} /> Search & Filter</h4>
         <form onSubmit={(e) => e.preventDefault()}>
+
+          <div className="form-group">
+            <label className="m-0">Tags</label>
+            <TagInput selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+          </div>
+
+          <div className="form-group">
+            <label>Tag Search Mode</label>
+            <div className="radio-group">
+              <input type="radio" id="tag-mode-or" value="or" checked={tagSearchMode === 'or'} onChange={(e) => setTagSearchMode(e.target.value)} />
+              <label htmlFor="tag-mode-or">OR</label>
+              <input type="radio" id="tag-mode-and" value="and" checked={tagSearchMode === 'and'} onChange={(e) => setTagSearchMode(e.target.value)} />
+              <label htmlFor="tag-mode-and">AND</label>
+            </div>
+          </div>
+
           <div className="form-group">
             <label>File Type</label>
             <div className="radio-group">
@@ -62,25 +74,14 @@ const GallerySidebar: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="tags">Tags (comma-separated)</label>
-            <input 
-              type="text" 
-              id="tags"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="e.g., character, concept_art"
-            />
-          </div>
-
-          <div className="form-group">
             <label htmlFor="rating">Minimum Rating</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Star size={16} color={minRating > 0 ? '#facc15' : '#6b7280'} />
-              <input 
-                type="range" 
-                id="rating" 
-                min="0" 
-                max="10" 
+              <input
+                type="range"
+                id="rating"
+                min="0"
+                max="10"
                 value={minRating}
                 onChange={(e) => setMinRating(Number(e.target.value))}
                 style={{ flexGrow: 1 }}
@@ -91,8 +92,8 @@ const GallerySidebar: React.FC = () => {
 
           <div className="form-group">
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={isFavorite}
                 onChange={(e) => setIsFavorite(e.target.checked)}
                 style={{ width: 'auto', marginRight: '0.5rem' }}
@@ -100,7 +101,8 @@ const GallerySidebar: React.FC = () => {
               Favorites Only
             </label>
           </div>
-           <div className="form-group">
+
+          <div className="form-group">
             <button type="button" onClick={handleClear} className="secondary flex items-center justify-center gap-2"><XCircle size={16} />Clear Filters</button>
           </div>
         </form>

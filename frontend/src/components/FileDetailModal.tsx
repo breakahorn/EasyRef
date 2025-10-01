@@ -281,14 +281,18 @@ const FileDetailModal: React.FC = () => {
 
               {selectedFile.tags?.length > 0 ?
                 <div className="flex flex-wrap items-center tag-list-container">
-                  {selectedFile.tags.map(tag => (
+                  <div className="tags-wrapper">
 
-                    <span key={tag.id} className="tag-item">
-                      {tag.name}
-                      <button onClick={() => removeTag(selectedFile.id, tag.id)} className="tag-remove-btn">
-                        <X size={12} />
-                      </button>
-                    </span>))}
+                    {selectedFile.tags.map(tag => (
+                      <span key={tag.id} className="tag-item">
+                        {tag.name}
+                        <button onClick={() => removeTag(selectedFile.id, tag.id)} className="tag-remove-btn">
+                          <X size={12} />
+                        </button>
+                      </span>))}
+                  </div>
+
+
                 </div>
                 : <p className="text-gray-500 text-sm">No tags yet.</p>}
 

@@ -112,16 +112,24 @@ def get_files(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 @app.get("/files/search/", response_model=List[schemas.File])
 def search_files(
     tags: Optional[str] = None,
+    tag_search_mode: Optional[str] = 'or',
     min_rating: Optional[int] = None,
     is_favorite: Optional[bool] = None,
     file_type: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    query = db.query(models.File).options(joinedload(models.File.file_metadata))
+    query = db.query(models.File).options(joinedload(models.File.file_metadata), joinedload(models.File.tags))
+    
     if tags:
         tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
         if tag_list:
-            query = query.join(models.File.tags).filter(models.Tag.name.in_(tag_list))
+            if tag_search_mode == 'and':
+                # For AND search, find files that have all the specified tags.
+                query = query.join(models.File.tags).filter(models.Tag.name.in_(tag_list))
+                query = query.group_by(models.File.id).having(func.count(models.Tag.id) == len(tag_list))
+            else: # Default to OR search
+                query = query.join(models.File.tags).filter(models.Tag.name.in_(tag_list))
+    
     if min_rating is not None and min_rating > 0:
         query = query.join(models.File.file_metadata).filter(models.Metadata.rating >= min_rating)
     if is_favorite is not None:
@@ -174,6 +182,10 @@ def add_tag_to_file(file_id: int, tag: schemas.TagCreate, db: Session = Depends(
         db.refresh(db_file)
 
     return db_file
+
+@app.get("/tags", response_model=List[schemas.Tag])
+def get_tags(db: Session = Depends(get_db)):
+    return db.query(models.Tag).order_by(models.Tag.name).all()
 
 @app.delete("/files/{file_id}/tags/{tag_id}", response_model=schemas.File)
 def remove_tag_from_file(file_id: int, tag_id: int, db: Session = Depends(get_db)):

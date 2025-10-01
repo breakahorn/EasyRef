@@ -48,7 +48,7 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   fetchFiles: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/files`);
+      const response = await axios.get(`${API_BASE_URL}/files`, { params: { limit: 10000 } });
       set({ files: response.data });
     } catch (error) {
       console.error("Error fetching files:", error);
