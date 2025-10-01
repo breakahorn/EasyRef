@@ -59,15 +59,25 @@ body {
   gap: 1.5rem;
 }
 
-.main-nav a {
+.main-nav a:not(.app-brand) {
   color: var(--color-text-secondary);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease-in-out;
 }
 
-.main-nav a:hover {
+.main-nav a:not(.app-brand):hover {
   color: var(--color-text-primary);
+}
+
+.app-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-primary);
+    font-size: 1.25rem; /* 20px */
+    font-weight: 700; /* bold */
+    text-decoration: none;
 }
 
 .main-content-wrapper {

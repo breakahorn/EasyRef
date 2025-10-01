@@ -1,16 +1,13 @@
-import { Outlet, Link } from "react-router-dom";
-import FileDetailModal from "./components/FileDetailModal";
+import { Outlet } from "react-router-dom";
+import Navbar from './components/Navbar';
 import Sidebar from "./components/Sidebar";
+import FileDetailModal from "./components/FileDetailModal";
 import './index.css';
 
 function App() {
   return (
     <div className="app-container">
-      <nav className="main-nav">
-        <Link to="/"><strong>EasyRef</strong></Link>
-        <Link to="/">Gallery</Link>
-        <Link to="/board">Reference Board</Link>
-      </nav>
+      <Navbar />
       <div className="main-content-wrapper">
         <Sidebar />
         <main className="content-area">

@@ -1,18 +1,27 @@
 import { NavLink } from 'react-router-dom';
+import { LayoutGrid } from 'lucide-react'; // Example icon
 
 const Navbar = () => {
   return (
-    <nav className="bg-[#2c3035] border-b border-[#424850] p-3 flex items-center gap-6 sticky top-0 z-10">
-      <h1 className="text-xl font-bold text-white">EasyRef</h1>
-      <NavLink 
-        to="/"
-        className={({ isActive }) => 
-          `font-medium transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`
-        }
-      >
-        Gallery
+    <nav className="main-nav flex items-center justify-between">
+      {/* App Logo/Name */}
+      <NavLink to="/" className="app-brand">
+        <LayoutGrid size={24} className="text-[var(--color-accent)]" />
+        <span>EasyRef</span>
       </NavLink>
-      {/* Future links like /board can be added here */}
+
+      {/* Navigation Links */}
+      <div className="flex items-center gap-6">
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
+            `font-medium transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`
+          }
+        >
+          Gallery
+        </NavLink>
+        {/* <NavLink to="/board">Reference Board</NavLink> */}
+      </div>
     </nav>
   );
 };
