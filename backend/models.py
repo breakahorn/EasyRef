@@ -84,5 +84,9 @@ class BoardItem(Base):
     rotation = Column(Float, default=0)
     z_index = Column(Integer, default=0)
 
+    # Store original dimensions for reset functionality
+    original_width = Column(Float, nullable=True)
+    original_height = Column(Float, nullable=True)
+
     board = relationship("Board", back_populates="items")
     file = relationship("File")

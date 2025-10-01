@@ -5,12 +5,13 @@ interface ContextMenuProps {
   x: number;
   y: number;
   onResetRotation: () => void;
+  onResetItem: () => void; // New prop
   onBringToFront: () => void;
   onSendToBack: () => void;
   onDelete: () => void;
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onResetRotation, onBringToFront, onSendToBack, onDelete }) => {
+const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onResetRotation, onResetItem, onBringToFront, onSendToBack, onDelete }) => {
   const menuStyle = {
     top: `${y}px`,
     left: `${x}px`,
@@ -21,6 +22,10 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onResetRotation, onBrin
       <button onClick={onResetRotation}>
         <RotateCcw size={16} />
         <span>Reset Rotation</span>
+      </button>
+      <button onClick={onResetItem}>
+        <RotateCcw size={16} />
+        <span>Reset Item</span>
       </button>
       <div className="context-menu-divider" />
       <button onClick={onBringToFront}>

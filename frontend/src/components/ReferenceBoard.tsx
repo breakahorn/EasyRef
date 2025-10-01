@@ -8,7 +8,15 @@ import ContextMenu from './ContextMenu';
 import { ItemTypes } from './Gallery';
 
 const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
-  const { activeBoardId, addItemToBoard, selectedItemId, setSelectedItemId, updateBoardItem, deleteBoardItem } = useBoardStore();
+  const {
+    selectedItemId,
+    setSelectedItemId,
+    updateBoardItem,
+    deleteBoardItem,
+    resetItem,
+    activeBoardId, // Assuming you might need this, adding it here
+    addItemToBoard // Assuming you might need this, adding it here
+  } = useBoardStore();
   const stageRef = useRef<Konva.Stage>(null);
   const layerRef = useRef<Konva.Layer>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -105,6 +113,12 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
     setMenu(null);
   };
 
+  const handleResetItem = () => {
+    if (menu) resetItem(menu.itemId);
+    setMenu(null);
+  };
+
+  // --- Pan and Zoom Handlers ---
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
     const stage = stageRef.current;
@@ -152,13 +166,58 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
     }
   };
 
+  const handleFitToScreen = () => {
+
+
+    const stage = stageRef.current;
+    const layer = layerRef.current;
+    if (!stage || !layer || items.length === 0) return;
+
+    // 1. Reset stage transform to get absolute client rect
+    const oldScale = stage.scaleX();
+    const oldPos = stage.position();
+    stage.scale({ x: 1, y: 1 });
+    stage.position({ x: 0, y: 0 });
+
+    // 2. Get the absolute bounding box
+    const bounds = layer.getClientRect();
+
+    // 3. Restore stage transform before animation
+    stage.scale({ x: oldScale, y: oldScale });
+    stage.position(oldPos);
+
+    if (bounds.width === 0 || bounds.height === 0) return;
+
+    const stageWidth = stage.container().clientWidth;
+    const stageHeight = stage.container().clientHeight;
+    const padding = 0; // No padding
+
+    const scaleX = stageWidth / bounds.width;
+    const scaleY = stageHeight / bounds.height;
+    const newScale = Math.min(scaleX, scaleY) * (1 - padding);
+
+    const newX = (-bounds.x * newScale) + (stageWidth - bounds.width * newScale) / 2;
+    const newY = (-bounds.y * newScale) + (stageHeight - bounds.height * newScale) / 2;
+
+    // 4. Animate to the new position and scale
+    stage.to({
+      x: newX,
+      y: newY,
+      scaleX: newScale,
+      scaleY: newScale,
+      duration: 0.2, // Smooth transition
+      easing: Konva.Easings.EaseInOut,
+    });
+  };
+
   return (
     <div ref={drop} className="reference-board" onContextMenu={(e) => e.preventDefault()}>
       {menu && (
-        <ContextMenu 
-          x={menu.x} 
-          y={menu.y} 
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
           onResetRotation={handleResetRotation}
+          onResetItem={handleResetItem}
           onBringToFront={handleBringToFront}
           onSendToBack={handleSendToBack}
           onDelete={handleDelete}
@@ -180,19 +239,25 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
             setMenu(null);
           }
         }}
+        onDblClick={(e) => {
+          const clickedOnEmpty = e.target === e.target.getStage();
+          if (clickedOnEmpty) {
+            handleFitToScreen();
+          }
+        }}
       >
         <Layer ref={layerRef}>
           {items.map(item => (
-            <BoardImage 
-              key={item.id} 
-              item={item} 
+            <BoardImage
+              key={item.id}
+              item={item}
               onSelect={() => setSelectedItemId(item.id)}
               onDragEnd={handleDragEnd}
               onContextMenu={handleContextMenu}
             />
           ))}
-          <Transformer 
-            ref={transformerRef} 
+          <Transformer
+            ref={transformerRef}
             onTransformEnd={handleTransformEnd}
             boundBoxFunc={(oldBox, newBox) => {
               if (newBox.width < 10 || newBox.height < 10) {

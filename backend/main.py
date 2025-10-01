@@ -282,8 +282,13 @@ def add_item_to_board(board_id: int, item: schemas.BoardItemCreate, db: Session 
     if not db_file:
         raise HTTPException(status_code=404, detail="File not found")
 
+    # Set original dimensions on creation
+    item_data = item.model_dump()
+    item_data['original_width'] = item.width
+    item_data['original_height'] = item.height
+
     db_item = models.BoardItem(
-        **item.model_dump(), board_id=board_id
+        **item_data, board_id=board_id
     )
     db.add(db_item)
     db.commit()
@@ -310,3 +315,20 @@ def delete_board_item(item_id: int, db: Session = Depends(get_db)):
         db.delete(db_item)
         db.commit()
     return
+
+@app.put("/items/{item_id}/reset", response_model=schemas.BoardItem)
+def reset_board_item(item_id: int, db: Session = Depends(get_db)):
+    db_item = db.query(models.BoardItem).filter(models.BoardItem.id == item_id).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Reset properties
+    db_item.rotation = 0
+    # You might want to reset position as well, for now we reset size and rotation
+    if db_item.original_width and db_item.original_height:
+        db_item.width = db_item.original_width
+        db_item.height = db_item.original_height
+
+    db.commit()
+    db.refresh(db_item)
+    return db_item

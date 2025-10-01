@@ -21,6 +21,7 @@ interface BoardState {
   addItemToBoard: (boardId: number, fileId: number, itemData: Partial<BoardItem>) => Promise<void>;
   updateBoardItem: (itemId: number, itemData: Partial<BoardItem>) => Promise<void>;
   deleteBoardItem: (itemId: number) => Promise<void>;
+  resetItem: (itemId: number) => Promise<void>;
 }
 
 export const useBoardStore = create<BoardState>((set, get) => ({
@@ -138,6 +139,30 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     } catch (error) {
       console.error('Error deleting item, reverting:', error);
       set({ activeBoard: { ...activeBoard, items: originalItems } });
+    }
+  },
+
+  resetItem: async (itemId: number) => {
+    const { activeBoard } = get();
+    if (!activeBoard) return;
+
+    try {
+      const response = await axios.put(`${API_URL}/items/${itemId}/reset`);
+      const updatedItem = response.data;
+
+      // Instead of refetching the whole board, just update the specific item in the local state
+      set(state => {
+        if (!state.activeBoard) return {};
+        const newItems = state.activeBoard.items.map(item => 
+          item.id === itemId ? updatedItem : item
+        );
+        return { 
+          activeBoard: { ...state.activeBoard, items: newItems } 
+        };
+      });
+
+    } catch (error) {
+      console.error(`Error resetting item ${itemId}:`, error);
     }
   },
 }));
