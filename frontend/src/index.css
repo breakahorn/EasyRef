@@ -426,7 +426,178 @@ body {
 
 /* Utility for filling icons */
 .filled-favorite {
-  fill: currentColor;
+    fill: currentColor;
+}
+
+/* --- Board Sidebar --- */
+.projects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.new-project-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.new-project-btn:hover {
+  background-color: var(--color-panel-2);
+  color: var(--color-text-primary);
+}
+
+.board-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.board-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  position: relative;
+}
+
+.board-list li:hover {
+  background-color: var(--color-panel-2);
+}
+
+.board-list li.active {
+  background-color: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.rename-form input {
+  width: 100%;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-accent);
+  color: #fff;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.project-item-menu-container {
+  position: relative;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  padding: 0.25rem;
+  border-radius: 6px;
+  display: none; /* Hidden by default, shown on li:hover */
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.board-list li:hover .menu-btn {
+  display: inline-flex;
+}
+
+.menu-btn:hover {
+  background-color: var(--color-panel-2);
+  color: var(--color-text-primary);
+}
+
+.board-list li.active .menu-btn {
+  color: #e0e0e0;
+}
+
+.board-list li.active .menu-btn:hover {
+  background-color: var(--color-accent-hover);
+  color: #fff;
+}
+
+.context-menu {
+  position: absolute;
+  z-index: 100;
+  background-color: var(--color-panel-1);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  width: 180px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.875rem;
+  width: 100%;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.context-menu button:hover {
+  background-color: var(--color-accent);
+  color: #fff;
+}
+
+.context-menu button.delete:hover {
+  background-color: #ef4444;
+  color: #fff;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 0.5rem 0;
+}
+
+.empty-board-list {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  padding: 2rem 1rem;
+  border: 2px dashed var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-panel-2);
+}
+
+.centered-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-secondary);
+  font-size: 1.2rem;
+}
+
+.reference-board {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: #24272b;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+  overflow: hidden;
 }
 
 /* --- Tag Input Form Style --- */

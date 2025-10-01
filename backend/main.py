@@ -226,3 +226,87 @@ def delete_file(file_id: int, db: Session = Depends(get_db)):
     return
 
 
+# --- Board Endpoints ---
+
+@app.post("/boards", response_model=schemas.Board)
+def create_board(board: schemas.BoardCreate, db: Session = Depends(get_db)):
+    db_board = models.Board(**board.model_dump())
+    db.add(db_board)
+    db.commit()
+    db.refresh(db_board)
+    return db_board
+
+@app.get("/boards", response_model=List[schemas.Board])
+def get_boards(db: Session = Depends(get_db)):
+    boards = db.query(models.Board).order_by(models.Board.created_at.desc()).all()
+    return boards
+
+@app.get("/boards/{board_id}", response_model=schemas.Board)
+def get_board(board_id: int, db: Session = Depends(get_db)):
+    db_board = db.query(models.Board).options(
+        joinedload(models.Board.items).joinedload(models.BoardItem.file)
+    ).filter(models.Board.id == board_id).first()
+    if db_board is None:
+        raise HTTPException(status_code=404, detail="Board not found")
+    return db_board
+
+@app.put("/boards/{board_id}", response_model=schemas.Board)
+def update_board(board_id: int, board: schemas.BoardUpdate, db: Session = Depends(get_db)):
+    db_board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if db_board is None:
+        raise HTTPException(status_code=404, detail="Board not found")
+    update_data = board.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_board, key, value)
+    db.commit()
+    db.refresh(db_board)
+    return db_board
+
+@app.delete("/boards/{board_id}", status_code=204)
+def delete_board(board_id: int, db: Session = Depends(get_db)):
+    db_board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if db_board:
+        db.delete(db_board)
+        db.commit()
+    return
+
+# --- BoardItem Endpoints ---
+
+@app.post("/boards/{board_id}/items", response_model=schemas.BoardItem)
+def add_item_to_board(board_id: int, item: schemas.BoardItemCreate, db: Session = Depends(get_db)):
+    db_board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if not db_board:
+        raise HTTPException(status_code=404, detail="Board not found")
+    
+    db_file = db.query(models.File).filter(models.File.id == item.file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    db_item = models.BoardItem(
+        **item.model_dump(), board_id=board_id
+    )
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+@app.put("/items/{item_id}", response_model=schemas.BoardItem)
+def update_board_item(item_id: int, item: schemas.BoardItemUpdate, db: Session = Depends(get_db)):
+    db_item = db.query(models.BoardItem).filter(models.BoardItem.id == item_id).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    update_data = item.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_item, key, value)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+@app.delete("/items/{item_id}", status_code=204)
+def delete_board_item(item_id: int, db: Session = Depends(get_db)):
+    db_item = db.query(models.BoardItem).filter(models.BoardItem.id == item_id).first()
+    if db_item:
+        db.delete(db_item)
+        db.commit()
+    return

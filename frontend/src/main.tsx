@@ -5,6 +5,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import App from './App';
 import GalleryPage from './pages/GalleryPage';
+import BoardPage from './pages/BoardPage';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <GalleryPage />,
+      },
+      {
+        path: "/board",
+        element: <BoardPage />,
       },
     ],
   },
