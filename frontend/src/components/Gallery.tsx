@@ -42,19 +42,21 @@ const DraggableGalleryItem = ({ file }) => {
     img.onload = () => {
       const initialWidth = 250;
       const aspectRatio = img.naturalWidth / img.naturalHeight;
+      // Center in the canvas area, accounting for sidebar and padding
+      const padding = 32; // 2rem = 32px
       addItemToBoard(activeBoardId, file.id, {
-        pos_x: 50, // Default position
-        pos_y: 50, // Default position
+        pos_x: (window.innerWidth - 324 - (padding * 2)) / 2,
+        pos_y: (window.innerHeight - 57 - (padding * 2)) / 2,
         width: initialWidth,
         height: initialWidth / aspectRatio,
-        rotation: 0, // Default rotation
+        rotation: 0,
       });
     };
     img.onerror = () => {
-      // Fallback for if image fails to load, add with default size
+      const padding = 32;
       addItemToBoard(activeBoardId, file.id, {
-        pos_x: 50,
-        pos_y: 50,
+        pos_x: (window.innerWidth - 324 - (padding * 2)) / 2,
+        pos_y: (window.innerHeight - 57 - (padding * 2)) / 2,
         width: 200,
         height: 200,
         rotation: 0,

@@ -123,7 +123,7 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
     e.evt.preventDefault();
     const stage = stageRef.current;
     if (!stage) return;
-    const scaleBy = 1.05;
+    const scaleBy = 1.15;
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
     if (!pointer) return;
