@@ -24,7 +24,6 @@ This application combines a powerful file gallery with an intuitive "Reference B
 
 ## 📸 Screenshots
 
-*(Here you can add screenshots of the application)*
 
 | Gallery View                               | Board View                                 |
 | ------------------------------------------ | ------------------------------------------ |
