@@ -1,7 +1,6 @@
 # EasyRef - Your Personal Visual Reference Library
 
-![EasyRef Banner](https://user-images.githubusercontent.com/12345/placeholder.jpg) <!-- Replace with a cool banner image -->
-
+<!-- ![EasyRef Banner](./.github/assets/banner.png) -->
 **EasyRef** is a self-hosted, open-source web application designed for artists, designers, and creators to effortlessly collect, manage, and utilize their visual references. Say goodbye to scattered folders and hello to a streamlined, searchable, and inspiring creative workflow.
 
 This application combines a powerful file gallery with an intuitive "Reference Board" feature, allowing you to build mood boards, study sheets, or inspiration canvases with your own assets.
@@ -29,7 +28,7 @@ This application combines a powerful file gallery with an intuitive "Reference B
 
 | Gallery View                               | Board View                                 |
 | ------------------------------------------ | ------------------------------------------ |
-| ![Gallery Screenshot](https://user-images.githubusercontent.com/12345/gallery.jpg) | ![Board Screenshot](https://user-images.githubusercontent.com/12345/board.jpg) |
+| ![Gallery Screenshot](./.github/assets/gallery.png) | ![Board Screenshot](./.github/assets/board.png) |
 
 ---
 
