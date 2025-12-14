@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_URL = 'http://127.0.0.1:8000';
 
 // Type definitions based on schemas
-interface BoardItem { id: number; board_id: number; file_id: number; pos_x: number; pos_y: number; width: number; height: number; rotation: number; z_index: number; file: any; }
+export interface BoardItem { id: number; board_id: number; file_id: number; pos_x: number; pos_y: number; width: number; height: number; rotation: number; z_index: number; file: any; }
 interface Board { id: number; name: string; description: string | null; items: BoardItem[]; }
 
 interface BoardState {
@@ -112,7 +112,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     if (!activeBoard) return;
 
     const originalItems = activeBoard.items;
-    const updatedItems = originalItems.map(item => 
+    const updatedItems = originalItems.map(item =>
       item.id === itemId ? { ...item, ...itemData } : item
     );
     set({ activeBoard: { ...activeBoard, items: updatedItems } });
@@ -131,7 +131,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
     const originalItems = activeBoard.items;
     const updatedItems = originalItems.filter(item => item.id !== itemId);
-    
+
     set({ activeBoard: { ...activeBoard, items: updatedItems }, selectedItemId: null });
 
     try {
@@ -153,11 +153,11 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       // Instead of refetching the whole board, just update the specific item in the local state
       set(state => {
         if (!state.activeBoard) return {};
-        const newItems = state.activeBoard.items.map(item => 
+        const newItems = state.activeBoard.items.map(item =>
           item.id === itemId ? updatedItem : item
         );
-        return { 
-          activeBoard: { ...state.activeBoard, items: newItems } 
+        return {
+          activeBoard: { ...state.activeBoard, items: newItems }
         };
       });
 

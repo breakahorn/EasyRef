@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { useTagStore } from './useTagStore.ts'
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -17,7 +18,7 @@ interface FileMetadata {
 }
 
 // Define the shape of the main file record
-interface FileRecord {
+export interface FileRecord {
   id: number;
   name: string;
   path: string;
@@ -64,13 +65,13 @@ export const useFileStore = create<FileState>((set, get) => ({
     }
   },
 
-  fetchRandomFile: () => {
+  fetchRandomFile: async () => {
     set(state => {
       if (state.files.length === 0) return {}; // Do nothing if no files are displayed
 
       const randomIndex = Math.floor(Math.random() * state.files.length);
       const randomFile = state.files[randomIndex];
-      
+
       return { selectedFile: randomFile };
     });
   },
@@ -107,15 +108,15 @@ export const useFileStore = create<FileState>((set, get) => ({
       const updatedMetadata = response.data;
 
       set(state => ({
-        selectedFile: state.selectedFile && state.selectedFile.id === fileId 
-          ? { 
-              ...state.selectedFile, 
-              file_metadata: { ...state.selectedFile.file_metadata, ...updatedMetadata } 
-            }
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId
+          ? {
+            ...state.selectedFile,
+            file_metadata: { ...state.selectedFile.file_metadata, ...updatedMetadata }
+          }
           : state.selectedFile,
-        files: state.files.map(f => 
-          f.id === fileId 
-            ? { ...f, file_metadata: { ...f.file_metadata, ...updatedMetadata } } 
+        files: state.files.map(f =>
+          f.id === fileId
+            ? { ...f, file_metadata: { ...f.file_metadata, ...updatedMetadata } }
             : f
         )
       }));
@@ -139,14 +140,16 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   addTag: async (fileId: number, tagName: string) => {
     try {
+      const { fetchTags } = useTagStore.getState();
       const response = await axios.post(`${API_BASE_URL}/files/${fileId}/tags`, { name: tagName });
       const updatedFile = response.data;
       set(state => ({
-        selectedFile: state.selectedFile && state.selectedFile.id === fileId 
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId
           ? { ...state.selectedFile, tags: updatedFile.tags }
           : state.selectedFile,
         files: state.files.map(f => f.id === fileId ? { ...f, tags: updatedFile.tags } : f),
       }));
+      await fetchTags();
     } catch (error) {
       console.error(`Error adding tag to file ${fileId}:`, error);
     }
@@ -154,14 +157,16 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   removeTag: async (fileId: number, tagId: number) => {
     try {
+      const { fetchTags } = useTagStore.getState();
       const response = await axios.delete(`${API_BASE_URL}/files/${fileId}/tags/${tagId}`);
       const updatedFile = response.data;
       set(state => ({
-        selectedFile: state.selectedFile && state.selectedFile.id === fileId 
+        selectedFile: state.selectedFile && state.selectedFile.id === fileId
           ? { ...state.selectedFile, tags: updatedFile.tags }
           : state.selectedFile,
         files: state.files.map(f => f.id === fileId ? { ...f, tags: updatedFile.tags } : f),
       }));
+      await fetchTags();
     } catch (error) {
       console.error(`Error removing tag from file ${fileId}:`, error);
     }

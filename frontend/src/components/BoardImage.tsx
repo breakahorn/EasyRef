@@ -2,6 +2,7 @@ import React from 'react';
 import { Image } from 'react-konva';
 import Konva from 'konva';
 import useImage from 'use-image';
+import type { BoardItem } from '../store/useBoardStore';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -11,9 +12,16 @@ const getFileUrl = (filePath: string) => {
   return `${API_BASE_URL}/${relativePath}`;
 };
 
-const BoardImage = ({ item, onSelect, onDragEnd, onContextMenu }) => {
+interface BoardImageProps {
+  item: BoardItem;
+  onSelect: (evt: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
+  onDragEnd: (evt: Konva.KonvaEventObject<DragEvent>) => void;
+  onContextMenu: (evt: Konva.KonvaEventObject<PointerEvent>) => void;
+}
+
+const BoardImage = ({ item, onSelect, onDragEnd, onContextMenu }: BoardImageProps) => {
   const imageUrl = getFileUrl(item.file.path);
-  const [image] = useImage(imageUrl, 'Anonymous');
+  const [image] = useImage(imageUrl, 'anonymous');
 
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
     if (e.evt.button !== 0) {

@@ -32,6 +32,7 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
     }
   }, [selectedItemId]);
 
+  const dropRef = useRef<HTMLDivElement | null>(null);
   const [, drop] = useDrop(() => ({
     accept: ItemTypes.IMAGE,
     drop: (item: { id: number, path: string }, monitor) => {
@@ -44,6 +45,7 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
       addItemToBoard(activeBoardId, item.id, { pos_x: pos.x, pos_y: pos.y });
     },
   }), [activeBoardId]);
+  drop(dropRef);
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
@@ -211,7 +213,7 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
   };
 
   return (
-    <div ref={drop} className="reference-board" onContextMenu={(e) => e.preventDefault()}>
+    <div ref={dropRef} className="reference-board" onContextMenu={(e) => e.preventDefault()}>
       {menu && (
         <ContextMenu
           x={menu.x}

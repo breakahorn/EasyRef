@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import { useFileStore } from '../store/useFileStore';
 import { useBoardStore } from '../store/useBoardStore';
 import { Plus } from 'lucide-react';
+import type { FileRecord } from '../store/useFileStore';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -19,11 +20,16 @@ const getFileUrl = (filePath: string) => {
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
 
-const DraggableGalleryItem = ({ file }) => {
+interface DraggableGalleryItemProps {
+  file: FileRecord;
+}
+
+const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
   console.log("Rendering item with file:", file); // DEBUG LINE
   const { selectFile } = useFileStore();
   const { activeBoardId, addItemToBoard } = useBoardStore();
 
+  const dragRef = useRef<HTMLDivElement | null>(null);
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.IMAGE,
     item: { id: file.id, path: file.path },
@@ -31,6 +37,7 @@ const DraggableGalleryItem = ({ file }) => {
       isDragging: !!monitor.isDragging(),
     }),
   }));
+  drag(dragRef);
 
   const handleAddToBoard = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,7 +95,7 @@ const DraggableGalleryItem = ({ file }) => {
 
   return (
     <div
-      ref={drag}
+      ref={dragRef}
       className="gallery-item"
       style={{ opacity: isDragging ? 0.5 : 1 }}
       onClick={() => selectFile(file)}
@@ -103,7 +110,7 @@ const DraggableGalleryItem = ({ file }) => {
       </>
       {isVideo && file.file_metadata && (
         <div className="video-info-overlay">
-          <span>{formatDuration(file.file_metadata.duration)}</span>
+          <span>{formatDuration(file.file_metadata?.duration ?? 0)}</span>
           <span>{file.file_metadata.height ? `${file.file_metadata.height}p` : ''}</span>
         </div>
       )}
