@@ -1,0 +1,6 @@
+pyproject.toml
+easyref_backend.egg-info/PKG-INFO
+easyref_backend.egg-info/SOURCES.txt
+easyref_backend.egg-info/dependency_links.txt
+easyref_backend.egg-info/requires.txt
+easyref_backend.egg-info/top_level.txt

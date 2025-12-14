@@ -75,18 +75,15 @@ Follow these instructions to get a local copy up and running for development and
     # Navigate to the backend directory
     cd backend
 
-    # Create and activate a virtual environment (recommended)
-    python -m venv .venv
-    # On Windows
-    .venv\Scripts\activate
-    # On macOS/Linux
-    source .venv/bin/activate
+    # Install uv once (if you don't have it yet)
+    python -m pip install --upgrade uv
 
-    # Install Python dependencies
-    pip install -r requirements.txt  # You may need to create this file first from imports
+    # Create the virtual environment and install dependencies from pyproject.toml
+    uv venv
+    uv sync
 
-    # Run the backend server
-    uvicorn main:app --reload
+    # Run the backend server (uv will auto-activate the venv for the command)
+    uv run uvicorn main:app --reload
     ```
     The API will be running at `http://127.0.0.1:8000`.
 
@@ -165,4 +162,3 @@ Distributed under the MIT License. See `LICENSE` file for more information. (You
 
 - A big thank you to the creators of all the open-source libraries used in this project.
 - Hat tip to any similar applications that provided inspiration.
-

@@ -1,0 +1,20 @@
+[project]
+name = "easyref-backend"
+version = "0.1.0"
+description = "FastAPI backend for the EasyRef creative asset management application."
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi==0.118.0",
+    "uvicorn[standard]==0.37.0",
+    "sqlalchemy==2.0.43",
+    "opencv-python-headless==4.12.0.88",
+    "python-multipart==0.0.20",
+    "pydantic==2.11.9",
+    "numpy==2.2.6",
+]
+
+[tool.uv]
+package = true
+
+[tool.uv.scripts]
+dev = "uvicorn main:app --reload"
