@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      - DATABASE_URL=sqlite:////data/library.db
+    volumes:
+      - backend_data:/data
+      - ./backend/storage:/app/storage
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "4173:4173"
+
+volumes:
+  backend_data:

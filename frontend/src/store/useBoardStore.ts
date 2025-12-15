@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
-
-const API_URL = 'http://127.0.0.1:8000';
+import { API_BASE_URL } from '../lib/api';
 
 // Type definitions based on schemas
 export interface BoardItem { id: number; board_id: number; file_id: number; pos_x: number; pos_y: number; width: number; height: number; rotation: number; z_index: number; file: any; }
@@ -34,7 +33,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   fetchBoards: async () => {
     try {
-      const response = await axios.get(`${API_URL}/boards`);
+      const response = await axios.get(`${API_BASE_URL}/boards`);
       set({ boards: response.data });
       if (get().activeBoardId === null && response.data.length > 0) {
         get().setActiveBoard(response.data[0].id);
@@ -51,7 +50,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }
     set({ activeBoardId: id, activeBoard: null }); // Set loading state
     try {
-      const response = await axios.get(`${API_URL}/boards/${id}`);
+      const response = await axios.get(`${API_BASE_URL}/boards/${id}`);
       set({ activeBoard: response.data });
     } catch (error) {
       console.error(`Error fetching board ${id}:`, error);
@@ -61,7 +60,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   createBoard: async (name) => {
     try {
-      const response = await axios.post(`${API_URL}/boards`, { name });
+      const response = await axios.post(`${API_BASE_URL}/boards`, { name });
       await get().fetchBoards();
       return response.data;
     } catch (error) {
@@ -72,7 +71,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   renameBoard: async (id, newName) => {
     try {
-      await axios.put(`${API_URL}/boards/${id}`, { name: newName });
+      await axios.put(`${API_BASE_URL}/boards/${id}`, { name: newName });
       await get().fetchBoards();
       if (get().activeBoardId === id) {
         await get().setActiveBoard(id);
@@ -84,7 +83,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   deleteBoard: async (id) => {
     try {
-      await axios.delete(`${API_URL}/boards/${id}`);
+      await axios.delete(`${API_BASE_URL}/boards/${id}`);
       const { boards, activeBoardId } = get();
       if (activeBoardId === id) {
         const remainingBoards = boards.filter(b => b.id !== id);
@@ -100,7 +99,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   addItemToBoard: async (boardId, fileId, itemData) => {
     try {
-      await axios.post(`${API_URL}/boards/${boardId}/items`, { file_id: fileId, ...itemData });
+      await axios.post(`${API_BASE_URL}/boards/${boardId}/items`, { file_id: fileId, ...itemData });
       await get().setActiveBoard(boardId); // Refresh the active board to show the new item
     } catch (error) {
       console.error('Error adding item to board:', error);
@@ -118,7 +117,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     set({ activeBoard: { ...activeBoard, items: updatedItems } });
 
     try {
-      await axios.put(`${API_URL}/items/${itemId}`, itemData);
+      await axios.put(`${API_BASE_URL}/items/${itemId}`, itemData);
     } catch (error) {
       console.error('Error updating item, reverting:', error);
       set({ activeBoard: { ...activeBoard, items: originalItems } });
@@ -135,7 +134,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     set({ activeBoard: { ...activeBoard, items: updatedItems }, selectedItemId: null });
 
     try {
-      await axios.delete(`${API_URL}/items/${itemId}`);
+      await axios.delete(`${API_BASE_URL}/items/${itemId}`);
     } catch (error) {
       console.error('Error deleting item, reverting:', error);
       set({ activeBoard: { ...activeBoard, items: originalItems } });
@@ -147,7 +146,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     if (!activeBoard) return;
 
     try {
-      const response = await axios.put(`${API_URL}/items/${itemId}/reset`);
+      const response = await axios.put(`${API_BASE_URL}/items/${itemId}/reset`);
       const updatedItem = response.data;
 
       // Instead of refetching the whole board, just update the specific item in the local state

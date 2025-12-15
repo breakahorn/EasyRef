@@ -4,17 +4,10 @@ import { useFileStore } from '../store/useFileStore';
 import { useBoardStore } from '../store/useBoardStore';
 import { Plus } from 'lucide-react';
 import type { FileRecord } from '../store/useFileStore';
-
-const API_BASE_URL = 'http://127.0.0.1:8000';
+import { buildAssetUrl } from '../lib/api';
 
 export const ItemTypes = {
   IMAGE: 'image',
-};
-
-const getFileUrl = (filePath: string) => {
-  if (!filePath) return '';
-  const relativePath = filePath.replace(/\\/g, '/').replace(/^\.\//, '');
-  return `${API_BASE_URL}/${relativePath}`;
 };
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
@@ -44,7 +37,7 @@ const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
     if (!activeBoardId) return;
 
     const img = new window.Image();
-    img.src = getFileUrl(file.path);
+    img.src = buildAssetUrl(file.path);
 
     img.onload = () => {
       const initialWidth = 250;
@@ -73,7 +66,7 @@ const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
 
   const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
   const isImage = IMAGE_EXTENSIONS.includes(fileExtension);
-  const isVideo = file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.webm') || file.name.toLowerCase().endsWith('.mov') || file.name.toLowerCase().endsWith('.avi');
+  const isVideo = VIDEO_EXTENSIONS.includes(fileExtension);
 
   const formatDuration = (seconds: number) => {
     if (isNaN(seconds)) return '00:00';
@@ -83,7 +76,7 @@ const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
   };
 
   const renderThumbnail = () => {
-    const url = getFileUrl(file.path);
+    const url = buildAssetUrl(file.path);
     if (isImage) {
       return <img src={url} alt={file.name} loading="lazy" />;
     } else if (isVideo) {

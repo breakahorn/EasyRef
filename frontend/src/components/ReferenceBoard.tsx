@@ -147,7 +147,7 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
     }
   };
 
-  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleMouseMove = () => {
     if (isPanning) {
       const stage = stageRef.current;
       if (stage) {

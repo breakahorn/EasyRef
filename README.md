@@ -102,6 +102,32 @@ Follow these instructions to get a local copy up and running for development and
 
 ---
 
+## 🐳 Docker Compose Environment
+
+Run the entire stack with a single command. Docker builds the FastAPI API and the production React frontend, while Nginx serves the static files and proxies API/file requests.
+
+### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) with the Docker Compose plugin.
+
+### Usage
+1. Build and start the stack:
+   ```sh
+   docker compose up --build
+   ```
+   (Add `-d` to run in the background.)
+2. Open the frontend at `http://localhost:4173`.
+3. The API remains reachable directly at `http://localhost:8000` if you need to inspect it (Swagger UI, etc.).
+
+### Data persistence
+- Uploaded files live in `backend/storage` on your host machine (mounted into the backend container).
+- The SQLite database is stored inside the `backend_data` named volume that Docker manages automatically. Remove the volume if you need a clean slate: `docker volume rm easyref_backend_data`.
+
+### Configuration notes
+- The backend honours the `DATABASE_URL` variable. The Compose file sets it to `sqlite:////data/library.db`, but you can swap in PostgreSQL or any SQLAlchemy-supported backend by editing `docker-compose.yml`.
+- To change the API base URL baked into the frontend, provide `VITE_API_BASE_URL` as a build argument in `docker-compose.yml` (defaults to `/api`, which Nginx proxies to the backend). For local non-Docker development you can copy `frontend/.env.example` to `frontend/.env` and override it there.
+
+---
+
 ## 📖 API Endpoints
 
 The backend provides a RESTful API for managing all resources.

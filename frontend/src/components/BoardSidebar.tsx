@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useBoardStore } from '../store/useBoardStore';
-import { Plus, Trash2, LayoutDashboard, MoreHorizontal, X, Edit } from 'lucide-react';
+import { Plus, Trash2, LayoutDashboard, MoreHorizontal, Edit } from 'lucide-react';
 
 const BoardSidebar: React.FC = () => {
   const {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFileStore } from '../store/useFileStore';
 import { Search, Shuffle, Star, XCircle } from 'lucide-react';
 import TagInput from './TagInput'; // Import the new component

@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { useTagStore } from './useTagStore.ts'
-
-const API_BASE_URL = 'http://127.0.0.1:8000';
+import { API_BASE_URL } from '../lib/api';
 
 // Define the shape of the nested metadata object
 interface FileMetadata {
