@@ -266,6 +266,12 @@ body {
   /* bg-red-700 */
 }
 
+.form-group>button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
 .viewer-controls .form-group button {
   width: 100%;
 }
@@ -581,8 +587,10 @@ body {
 .board-list li {
   display: flex;
   justify-content: space-between;
-  align-items: baseline; /* Align by text baseline */
-  padding: 0.7rem 0.75rem; /* Adjust padding for better visual balance */
+  align-items: baseline;
+  /* Align by text baseline */
+  padding: 0.7rem 0.75rem;
+  /* Adjust padding for better visual balance */
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;

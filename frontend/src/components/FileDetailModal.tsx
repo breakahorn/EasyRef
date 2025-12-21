@@ -75,6 +75,7 @@ const FileDetailModal: React.FC = () => {
   const fileExtension = selectedFile?.name.split('.').pop()?.toLowerCase() || '';
   const isImage = IMAGE_EXTENSIONS.includes(fileExtension);
   const isVideo = VIDEO_EXTENSIONS.includes(fileExtension);
+  const isFavorite = Boolean(selectedFile?.file_metadata?.is_favorite);
 
   // Load image into memory
   useEffect(() => {
@@ -184,6 +185,7 @@ const FileDetailModal: React.FC = () => {
   };
 
   const handleDelete = () => {
+    if (isFavorite) return;
     if (selectedFile && window.confirm(`Are you sure you want to delete "${selectedFile.name}"? This action cannot be undone.`)) {
       deleteFile(selectedFile.id);
     }
@@ -341,7 +343,12 @@ const FileDetailModal: React.FC = () => {
             <div className="sidebar-section">
               <h4 className="font-semibold text-red-500/80"><AlertTriangle size={16} /> Danger Zone</h4>
               <div className="form-group">
-                <button onClick={handleDelete} className="button danger flex items-center justify-center gap-2">
+                <button
+                  onClick={handleDelete}
+                  className="button danger flex items-center justify-center gap-2"
+                  disabled={isFavorite}
+                  title={isFavorite ? 'お気に入りは削除できません。' : undefined}
+                >
                   Delete this file
                 </button>
               </div>
