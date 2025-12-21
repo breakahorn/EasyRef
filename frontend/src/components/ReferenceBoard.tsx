@@ -20,6 +20,7 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
   const stageRef = useRef<Konva.Stage>(null);
   const layerRef = useRef<Konva.Layer>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
 
   const [menu, setMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -46,6 +47,27 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
     },
   }), [activeBoardId]);
   drop(dropRef);
+
+  useEffect(() => {
+    const container = dropRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect();
+      setStageSize({ width: rect.width, height: rect.height });
+    };
+
+    updateSize();
+
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(container);
+    window.addEventListener('resize', updateSize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateSize);
+    };
+  }, []);
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
@@ -227,8 +249,8 @@ const ReferenceBoard: React.FC<{ items: any[] }> = ({ items }) => {
       )}
       <Stage
         ref={stageRef}
-        width={window.innerWidth - 324}
-        height={window.innerHeight - 57}
+        width={stageSize.width}
+        height={stageSize.height}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

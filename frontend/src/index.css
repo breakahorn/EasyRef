@@ -96,6 +96,72 @@ body {
   overflow: hidden;
 }
 
+.sidebar-shell {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-panel-1);
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.sidebar-shell .sidebar {
+  width: 100%;
+  border-right: none;
+}
+
+.sidebar-shell-header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-shell.collapsed .sidebar-shell-header {
+  justify-content: center;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar-shell.collapsed .sidebar-content {
+  display: none;
+}
+
+.sidebar-toggle {
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  padding: 0.35rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--color-panel-2);
+  color: var(--color-text-primary);
+}
+
+.sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+}
+
+.sidebar-resizer:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
 .content-area {
   flex-grow: 1;
   padding: 2rem;
