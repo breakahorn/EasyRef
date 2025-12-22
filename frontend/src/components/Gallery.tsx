@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { useFileStore } from '../store/useFileStore';
 import { useBoardStore } from '../store/useBoardStore';
@@ -15,14 +15,21 @@ const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
 
 interface DraggableGalleryItemProps {
   file: FileRecord;
+  isSelected: boolean;
+  onToggleSelect: (fileId: number) => void;
+  onOpenDetails: (file: FileRecord) => void;
+  onItemRef: (id: number, node: HTMLDivElement | null) => void;
 }
 
-const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
-  console.log("Rendering item with file:", file); // DEBUG LINE
-  const { selectFile } = useFileStore();
+const DraggableGalleryItem = ({
+  file,
+  isSelected,
+  onToggleSelect,
+  onOpenDetails,
+  onItemRef
+}: DraggableGalleryItemProps) => {
   const { activeBoardId, addItemToBoard } = useBoardStore();
 
-  const dragRef = useRef<HTMLDivElement | null>(null);
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.IMAGE,
     item: { id: file.id, path: file.path },
@@ -30,7 +37,6 @@ const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
       isDragging: !!monitor.isDragging(),
     }),
   }));
-  drag(dragRef);
 
   const handleAddToBoard = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,10 +94,14 @@ const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
 
   return (
     <div
-      ref={dragRef}
-      className="gallery-item"
+      ref={(node) => {
+        drag(node);
+        onItemRef(file.id, node);
+      }}
+      className={`gallery-item${isSelected ? ' selected' : ''}`}
       style={{ opacity: isDragging ? 0.5 : 1 }}
-      onClick={() => selectFile(file)}
+      onClick={() => onToggleSelect(file.id)}
+      onDoubleClick={() => onOpenDetails(file)}
     >
       <>
         {activeBoardId && isImage && (
@@ -112,17 +122,135 @@ const DraggableGalleryItem = ({ file }: DraggableGalleryItemProps) => {
 };
 
 const Gallery: React.FC = () => {
-  const { files, fetchFiles } = useFileStore();
+  const {
+    files,
+    fetchFiles,
+    selectFile,
+    selectedFileIds,
+    toggleFileSelection,
+    setSelectedFiles,
+    clearSelection,
+  } = useFileStore();
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const selectionStart = useRef<{ x: number; y: number } | null>(null);
+  const isSelecting = useRef(false);
 
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
 
+  const handleItemRef = (id: number, node: HTMLDivElement | null) => {
+    if (!node) {
+      itemRefs.current.delete(id);
+      return;
+    }
+    itemRefs.current.set(id, node);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.gallery-item')) return;
+    const container = gridRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
+    selectionStart.current = { x: startX, y: startY };
+    isSelecting.current = true;
+    setSelectionRect({ x: startX, y: startY, width: 0, height: 0 });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isSelecting.current || !selectionStart.current) return;
+    const container = gridRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    const x = Math.min(selectionStart.current.x, currentX);
+    const y = Math.min(selectionStart.current.y, currentY);
+    const width = Math.abs(selectionStart.current.x - currentX);
+    const height = Math.abs(selectionStart.current.y - currentY);
+    setSelectionRect({ x, y, width, height });
+  };
+
+  const finalizeSelection = () => {
+    if (!isSelecting.current || !selectionRect) return;
+    const container = gridRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const isClick = selectionRect.width < 4 && selectionRect.height < 4;
+
+    if (isClick) {
+      clearSelection();
+      setSelectionRect(null);
+      selectionStart.current = null;
+      isSelecting.current = false;
+      return;
+    }
+
+    const selected: number[] = [];
+    itemRefs.current.forEach((node, id) => {
+      const nodeRect = node.getBoundingClientRect();
+      const left = nodeRect.left - rect.left;
+      const right = nodeRect.right - rect.left;
+      const top = nodeRect.top - rect.top;
+      const bottom = nodeRect.bottom - rect.top;
+
+      const intersects = !(
+        right < selectionRect.x ||
+        left > selectionRect.x + selectionRect.width ||
+        bottom < selectionRect.y ||
+        top > selectionRect.y + selectionRect.height
+      );
+
+      if (intersects) {
+        selected.push(id);
+      }
+    });
+
+    setSelectedFiles(selected);
+    setSelectionRect(null);
+    selectionStart.current = null;
+    isSelecting.current = false;
+  };
+
   return (
-    <div className="gallery-grid">
+    <div
+      ref={gridRef}
+      className="gallery-grid"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={finalizeSelection}
+      onMouseLeave={finalizeSelection}
+    >
       {files.map((file) => (
-        <DraggableGalleryItem key={file.id} file={file} />
+        <DraggableGalleryItem
+          key={file.id}
+          file={file}
+          isSelected={selectedFileIds.includes(file.id)}
+          onToggleSelect={() => toggleFileSelection(file.id)}
+          onOpenDetails={selectFile}
+          onItemRef={handleItemRef}
+        />
       ))}
+      {selectionRect && (
+        <div
+          className="gallery-selection-rect"
+          style={{
+            left: selectionRect.x,
+            top: selectionRect.y,
+            width: selectionRect.width,
+            height: selectionRect.height
+          }}
+        />
+      )}
     </div>
   );
 };
