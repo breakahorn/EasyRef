@@ -1,11 +1,51 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Plus, Tag } from 'lucide-react';
+import * as Select from '@radix-ui/react-select';
+import { AlertTriangle, Check, ChevronDown, Pencil, Plus, Tag, X } from 'lucide-react';
 import { useFileStore } from '../store/useFileStore';
 import { useBoardStore } from '../store/useBoardStore';
 import { buildAssetUrl } from '../lib/api';
 import type { FileRecord } from '../store/useFileStore';
 
 type BoardOption = { id: number; name: string };
+type BulkMode = 'normal' | 'edit' | 'board';
+type SelectOption = { value: string; label: string };
+
+const BulkSelect = ({
+  value,
+  placeholder,
+  options,
+  onChange,
+  disabled,
+}: {
+  value?: string;
+  placeholder: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) => (
+  <Select.Root value={value} onValueChange={onChange} disabled={disabled}>
+    <Select.Trigger className="bulk-select-trigger">
+      <Select.Value placeholder={placeholder} />
+      <Select.Icon className="bulk-select-icon">
+        <ChevronDown size={16} />
+      </Select.Icon>
+    </Select.Trigger>
+    <Select.Portal>
+      <Select.Content className="bulk-select-content" position="popper" sideOffset={6}>
+        <Select.Viewport className="bulk-select-viewport">
+          {options.map(option => (
+            <Select.Item key={option.value} value={option.value} className="bulk-select-item">
+              <Select.ItemText>{option.label}</Select.ItemText>
+              <Select.ItemIndicator className="bulk-select-indicator">
+                <Check size={14} />
+              </Select.ItemIndicator>
+            </Select.Item>
+          ))}
+        </Select.Viewport>
+      </Select.Content>
+    </Select.Portal>
+  </Select.Root>
+);
 
 const parseTags = (value: string) =>
   value
@@ -39,7 +79,12 @@ const loadImageSize = (file: FileRecord) =>
     img.onerror = () => resolve({ width: 200, height: 200 });
   });
 
-const BulkEditToolbar: React.FC = () => {
+interface BulkEditToolbarProps {
+  mode: BulkMode;
+  setMode: (mode: BulkMode) => void;
+}
+
+const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
   const {
     files,
     selectedFileIds,
@@ -63,16 +108,16 @@ const BulkEditToolbar: React.FC = () => {
   }, [fetchBoards]);
 
   useEffect(() => {
-    if (activeBoardId && !boardId) {
+    if (mode !== 'board') return;
+    if (boardId) return;
+    if (activeBoardId) {
       setBoardId(String(activeBoardId));
+      return;
     }
-  }, [activeBoardId, boardId]);
-
-  useEffect(() => {
-    if (deleteSelected && boardId) {
-      setBoardId('');
+    if (boards.length > 0) {
+      setBoardId(String(boards[0].id));
     }
-  }, [deleteSelected, boardId]);
+  }, [mode, boardId, activeBoardId, boards]);
 
   const selectedFiles = useMemo(() => {
     const selectedSet = new Set(selectedFileIds);
@@ -84,14 +129,14 @@ const BulkEditToolbar: React.FC = () => {
   const removeTagList = parseTags(removeTags);
   const ratingValue = rating === '' ? null : Number(rating);
   const boardIdValue = boardId ? Number(boardId) : null;
-  const hasActions = Boolean(
+  const hasEditActions = Boolean(
     addTagList.length ||
     removeTagList.length ||
     toggleFavorite ||
     ratingValue !== null ||
-    deleteSelected ||
-    boardIdValue
+    deleteSelected
   );
+  const hasBoardAction = Boolean(boardIdValue);
 
   const resetInputs = () => {
     setAddTags('');
@@ -99,16 +144,19 @@ const BulkEditToolbar: React.FC = () => {
     setToggleFavorite(false);
     setRating('');
     setDeleteSelected(false);
+    setBoardId('');
   };
 
   const handleApply = async () => {
-    if (!hasSelection || !hasActions) return;
+    if (!hasSelection) return;
+    if (mode === 'edit' && !hasEditActions) return;
+    if (mode === 'board' && !hasBoardAction) return;
     setIsApplying(true);
     setErrorMessage(null);
 
     try {
       let boardItems = null;
-      if (boardIdValue) {
+      if (mode === 'board' && boardIdValue) {
         const { x, y } = getBoardCenter();
         boardItems = await Promise.all(selectedFiles.map(async (file) => {
           const { width, height } = await loadImageSize(file);
@@ -126,13 +174,13 @@ const BulkEditToolbar: React.FC = () => {
 
       await applyBatch({
         file_ids: selectedFileIds,
-        add_tags: addTagList,
-        remove_tags: removeTagList,
-        toggle_favorite: toggleFavorite,
-        rating: ratingValue,
-        delete_files: deleteSelected,
-        board_id: boardIdValue,
-        board_items: boardItems,
+        add_tags: mode === 'edit' ? addTagList : [],
+        remove_tags: mode === 'edit' ? removeTagList : [],
+        toggle_favorite: mode === 'edit' ? toggleFavorite : false,
+        rating: mode === 'edit' ? ratingValue : null,
+        delete_files: mode === 'edit' ? deleteSelected : false,
+        board_id: mode === 'board' ? boardIdValue : null,
+        board_items: mode === 'board' ? boardItems : null,
       });
 
       if (boardIdValue && activeBoardId === boardIdValue) {
@@ -141,6 +189,7 @@ const BulkEditToolbar: React.FC = () => {
 
       resetInputs();
       setIsConfirmOpen(false);
+      setMode('normal');
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
       setErrorMessage(detail || 'Batch operation failed.');
@@ -150,89 +199,167 @@ const BulkEditToolbar: React.FC = () => {
   };
 
   const boardOptions: BoardOption[] = boards.map(board => ({ id: board.id, name: board.name }));
+  const ratingOptions: SelectOption[] = [
+    { value: 'unset', label: '--' },
+    ...Array.from({ length: 11 }).map((_, idx) => ({
+      value: String(idx),
+      label: String(idx),
+    }))
+  ];
+  const boardSelectOptions: SelectOption[] = boardOptions.map(board => ({
+    value: String(board.id),
+    label: board.name,
+  }));
+
+  const handleCancel = () => {
+    resetInputs();
+    clearSelection();
+    setErrorMessage(null);
+    setIsConfirmOpen(false);
+    setMode('normal');
+  };
 
   return (
     <div className="bulk-toolbar">
-      <div className="bulk-toolbar-group">
-        <span className="bulk-count">
-          {hasSelection ? `${selectedFileIds.length} selected` : 'No selection'}
-        </span>
-        {hasSelection && (
-          <button type="button" className="secondary" onClick={clearSelection}>
-            Clear
-          </button>
-        )}
-      </div>
-
-      <div className="bulk-toolbar-group bulk-fields">
-        <div className="bulk-field">
-          <Tag size={16} />
-          <input
-            type="text"
-            placeholder="Add tags (comma)"
-            value={addTags}
-            onChange={(e) => setAddTags(e.target.value)}
-          />
-        </div>
-        <div className="bulk-field">
-          <Tag size={16} />
-          <input
-            type="text"
-            placeholder="Remove tags (comma)"
-            value={removeTags}
-            onChange={(e) => setRemoveTags(e.target.value)}
-          />
-        </div>
-        <label className="bulk-toggle">
-          <input
-            type="checkbox"
-            checked={toggleFavorite}
-            onChange={(e) => setToggleFavorite(e.target.checked)}
-          />
-          Toggle favorite
-        </label>
-        <div className="bulk-field bulk-rating">
-          <span>Rating</span>
-          <select value={rating} onChange={(e) => setRating(e.target.value)}>
-            <option value="">--</option>
-            {Array.from({ length: 11 }).map((_, idx) => (
-              <option key={idx} value={idx}>{idx}</option>
-            ))}
-          </select>
-        </div>
-        <div className="bulk-field bulk-board">
-          <Plus size={16} />
-          <select
-            value={boardId}
-            onChange={(e) => setBoardId(e.target.value)}
-            disabled={deleteSelected}
+      {mode === 'normal' && (
+        <div className="bulk-toolbar-group">
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => {
+              clearSelection();
+              resetInputs();
+              setMode('edit');
+            }}
           >
-            <option value="">Add to board...</option>
-            {boardOptions.map(board => (
-              <option key={board.id} value={board.id}>{board.name}</option>
-            ))}
-          </select>
+            <Pencil size={16} className="bulk-btn-icon" />
+            Edit
+          </button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => {
+              clearSelection();
+              resetInputs();
+              setMode('board');
+            }}
+          >
+            <Plus size={16} className="bulk-btn-icon" />
+            Add to board
+          </button>
         </div>
-        <label className="bulk-toggle danger">
-          <input
-            type="checkbox"
-            checked={deleteSelected}
-            onChange={(e) => setDeleteSelected(e.target.checked)}
-          />
-          Delete selected
-        </label>
-      </div>
+      )}
 
-      <div className="bulk-toolbar-group bulk-actions">
-        <button
-          type="button"
-          className="primary"
-          disabled={!hasSelection || !hasActions}
-          onClick={() => setIsConfirmOpen(true)}
-        >
-          Apply
-        </button>
-      </div>
+      {mode === 'edit' && (
+        <>
+          <div className="bulk-toolbar-group">
+            <span className="bulk-count">{hasSelection ? `${selectedFileIds.length} selected` : 'Select items'}</span>
+          </div>
+          <div className="bulk-toolbar-group bulk-fields">
+            <div className="bulk-field">
+              <Tag size={16} />
+              <input
+                type="text"
+                placeholder="Add tags (comma)"
+                value={addTags}
+                onChange={(e) => setAddTags(e.target.value)}
+              />
+            </div>
+            <div className="bulk-field">
+              <Tag size={16} />
+              <input
+                type="text"
+                placeholder="Remove tags (comma)"
+                value={removeTags}
+                onChange={(e) => setRemoveTags(e.target.value)}
+              />
+            </div>
+            <label className="bulk-toggle">
+              <input
+                type="checkbox"
+                checked={toggleFavorite}
+                onChange={(e) => setToggleFavorite(e.target.checked)}
+              />
+              Toggle favorite
+            </label>
+            <div className="bulk-field bulk-rating">
+              <span>Rating</span>
+              <BulkSelect
+                value={rating}
+                placeholder="--"
+                options={ratingOptions}
+                onChange={(value) => setRating(value === 'unset' ? '' : value)}
+              />
+            </div>
+            <label className="bulk-toggle danger">
+              <input
+                type="checkbox"
+                checked={deleteSelected}
+                onChange={(e) => setDeleteSelected(e.target.checked)}
+              />
+              Delete
+            </label>
+          </div>
+          <div className="bulk-toolbar-group bulk-actions">
+            <button
+              type="button"
+              className="secondary"
+              onClick={handleCancel}
+              disabled={isApplying}
+            >
+              <X size={16} />
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="primary"
+              disabled={!hasSelection || !hasEditActions}
+              onClick={() => setIsConfirmOpen(true)}
+            >
+              Apply
+            </button>
+          </div>
+        </>
+      )}
+
+      {mode === 'board' && (
+        <>
+          <div className="bulk-toolbar-group">
+            <span className="bulk-count">{hasSelection ? `${selectedFileIds.length} selected` : 'Select items'}</span>
+          </div>
+          <div className="bulk-toolbar-group bulk-fields">
+            <div className="bulk-field bulk-board">
+              <Plus size={16} />
+              <BulkSelect
+                value={boardId || undefined}
+                placeholder="Select board"
+                options={boardSelectOptions}
+                onChange={setBoardId}
+                disabled={boardSelectOptions.length === 0}
+              />
+            </div>
+          </div>
+          <div className="bulk-toolbar-group bulk-actions">
+            <button
+              type="button"
+              className="secondary"
+              onClick={handleCancel}
+              disabled={isApplying}
+            >
+              <X size={16} />
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="primary"
+              disabled={!hasSelection || !hasBoardAction}
+              onClick={() => setIsConfirmOpen(true)}
+            >
+              Apply
+            </button>
+          </div>
+        </>
+      )}
 
       {errorMessage && (
         <div className="bulk-error">
@@ -247,12 +374,14 @@ const BulkEditToolbar: React.FC = () => {
             <h3>Apply changes?</h3>
             <ul>
               <li>{selectedFileIds.length} items</li>
-              {addTagList.length > 0 && <li>Add tags: {addTagList.join(', ')}</li>}
-              {removeTagList.length > 0 && <li>Remove tags: {removeTagList.join(', ')}</li>}
-              {toggleFavorite && <li>Toggle favorite</li>}
-              {ratingValue !== null && <li>Set rating: {ratingValue}</li>}
-              {boardIdValue && <li>Add to board: {boardOptions.find(b => b.id === boardIdValue)?.name}</li>}
-              {deleteSelected && <li className="danger-text">Delete selected</li>}
+              {mode === 'edit' && addTagList.length > 0 && <li>Add tags: {addTagList.join(', ')}</li>}
+              {mode === 'edit' && removeTagList.length > 0 && <li>Remove tags: {removeTagList.join(', ')}</li>}
+              {mode === 'edit' && toggleFavorite && <li>Toggle favorite</li>}
+              {mode === 'edit' && ratingValue !== null && <li>Set rating: {ratingValue}</li>}
+              {mode === 'board' && boardIdValue && (
+                <li>Add to board: {boardOptions.find(b => b.id === boardIdValue)?.name}</li>
+              )}
+              {mode === 'edit' && deleteSelected && <li className="danger-text">Delete selected</li>}
             </ul>
             <div className="bulk-confirm-actions">
               <button type="button" className="secondary" onClick={() => setIsConfirmOpen(false)} disabled={isApplying}>

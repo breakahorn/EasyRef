@@ -19,6 +19,7 @@ interface DraggableGalleryItemProps {
   onToggleSelect: (fileId: number) => void;
   onOpenDetails: (file: FileRecord) => void;
   onItemRef: (id: number, node: HTMLDivElement | null) => void;
+  selectionEnabled: boolean;
 }
 
 const DraggableGalleryItem = ({
@@ -26,7 +27,8 @@ const DraggableGalleryItem = ({
   isSelected,
   onToggleSelect,
   onOpenDetails,
-  onItemRef
+  onItemRef,
+  selectionEnabled
 }: DraggableGalleryItemProps) => {
   const { activeBoardId, addItemToBoard } = useBoardStore();
 
@@ -100,8 +102,13 @@ const DraggableGalleryItem = ({
       }}
       className={`gallery-item${isSelected ? ' selected' : ''}`}
       style={{ opacity: isDragging ? 0.5 : 1 }}
-      onClick={() => onToggleSelect(file.id)}
-      onDoubleClick={() => onOpenDetails(file)}
+      onClick={() => {
+        if (selectionEnabled) {
+          onToggleSelect(file.id);
+        } else {
+          onOpenDetails(file);
+        }
+      }}
     >
       <>
         {activeBoardId && isImage && (
@@ -121,7 +128,11 @@ const DraggableGalleryItem = ({
   );
 };
 
-const Gallery: React.FC = () => {
+interface GalleryProps {
+  mode: 'normal' | 'edit' | 'board';
+}
+
+const Gallery: React.FC<GalleryProps> = ({ mode }) => {
   const {
     files,
     fetchFiles,
@@ -141,6 +152,8 @@ const Gallery: React.FC = () => {
     fetchFiles();
   }, [fetchFiles]);
 
+  const selectionEnabled = mode !== 'normal';
+
   const handleItemRef = (id: number, node: HTMLDivElement | null) => {
     if (!node) {
       itemRefs.current.delete(id);
@@ -150,6 +163,7 @@ const Gallery: React.FC = () => {
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!selectionEnabled) return;
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (target.closest('.gallery-item')) return;
@@ -165,6 +179,7 @@ const Gallery: React.FC = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!selectionEnabled) return;
     if (!isSelecting.current || !selectionStart.current) return;
     const container = gridRef.current;
     if (!container) return;
@@ -180,6 +195,7 @@ const Gallery: React.FC = () => {
   };
 
   const finalizeSelection = () => {
+    if (!selectionEnabled) return;
     if (!isSelecting.current || !selectionRect) return;
     const container = gridRef.current;
     if (!container) return;
@@ -235,12 +251,13 @@ const Gallery: React.FC = () => {
           key={file.id}
           file={file}
           isSelected={selectedFileIds.includes(file.id)}
-          onToggleSelect={() => toggleFileSelection(file.id)}
+          onToggleSelect={toggleFileSelection}
           onOpenDetails={selectFile}
           onItemRef={handleItemRef}
+          selectionEnabled={selectionEnabled}
         />
       ))}
-      {selectionRect && (
+      {selectionEnabled && selectionRect && (
         <div
           className="gallery-selection-rect"
           style={{

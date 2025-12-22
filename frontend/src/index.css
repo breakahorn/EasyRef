@@ -266,6 +266,13 @@ body {
   /* bg-red-700 */
 }
 
+.clear-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
 .form-group>button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -442,6 +449,7 @@ body {
   border-radius: 12px;
   padding: 0.75rem 1rem;
   margin-bottom: 1.5rem;
+  min-height: 65px;
 }
 
 .bulk-toolbar-group {
@@ -454,6 +462,7 @@ body {
 .bulk-count {
   font-weight: 600;
   color: var(--color-text-primary);
+  min-width: 110px;
 }
 
 .bulk-fields {
@@ -476,6 +485,77 @@ body {
   border: none;
   color: var(--color-text-primary);
   outline: none;
+  border-radius: 6px;
+}
+
+.bulk-field select {
+  appearance: none;
+  padding-right: 1.25rem;
+}
+
+.bulk-field select option {
+  background-color: var(--color-panel-1);
+  color: var(--color-text-primary);
+}
+
+.bulk-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.bulk-select-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bulk-select-icon {
+  display: inline-flex;
+  color: var(--color-text-secondary);
+}
+
+.bulk-select-content {
+  background-color: var(--color-panel-1);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+  z-index: 100;
+}
+
+.bulk-select-viewport {
+  padding: 0.4rem;
+}
+
+.bulk-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.bulk-select-item[data-highlighted] {
+  background-color: var(--color-panel-2);
+}
+
+.bulk-select-item[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bulk-select-indicator {
+  color: var(--color-accent);
 }
 
 .bulk-field select:disabled {
@@ -515,6 +595,9 @@ body {
   background-color: var(--color-accent);
   color: white;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
 }
@@ -525,7 +608,15 @@ body {
   border-radius: 8px;
   border: none;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   cursor: pointer;
+}
+
+.bulk-btn-icon {
+  position: relative;
+  top: -1px;
 }
 
 .bulk-toolbar .secondary {
