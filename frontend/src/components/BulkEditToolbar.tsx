@@ -16,19 +16,26 @@ const BulkSelect = ({
   options,
   onChange,
   disabled,
+  className,
+  children,
 }: {
   value?: string;
   placeholder: string;
   options: SelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  className?: string;
+  children?: React.ReactNode;
 }) => (
   <Select.Root value={value} onValueChange={onChange} disabled={disabled}>
-    <Select.Trigger className="bulk-select-trigger">
-      <Select.Value placeholder={placeholder} />
-      <Select.Icon className="bulk-select-icon">
-        <ChevronDown size={16} />
-      </Select.Icon>
+    <Select.Trigger asChild>
+      <div className={`bulk-select-trigger ${className || ''}`}>
+        {children}
+        <Select.Value placeholder={placeholder} className="bulk-select-value" />
+        <Select.Icon className="bulk-select-icon">
+          <ChevronDown size={16} />
+        </Select.Icon>
+      </div>
     </Select.Trigger>
     <Select.Portal>
       <Select.Content className="bulk-select-content" position="popper" sideOffset={6}>
@@ -282,15 +289,15 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
               />
               Toggle favorite
             </label>
-            <div className="bulk-field bulk-rating">
+            <BulkSelect
+              className="bulk-field bulk-rating"
+              value={rating}
+              placeholder="--"
+              options={ratingOptions}
+              onChange={(value) => setRating(value === 'unset' ? '' : value)}
+            >
               <span>Rating</span>
-              <BulkSelect
-                value={rating}
-                placeholder="--"
-                options={ratingOptions}
-                onChange={(value) => setRating(value === 'unset' ? '' : value)}
-              />
-            </div>
+            </BulkSelect>
             <label className="bulk-toggle danger">
               <input
                 type="checkbox"
@@ -328,16 +335,16 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
             <span className="bulk-count">{hasSelection ? `${selectedFileIds.length} selected` : 'Select items'}</span>
           </div>
           <div className="bulk-toolbar-group bulk-fields">
-            <div className="bulk-field bulk-board">
+            <BulkSelect
+              className="bulk-field bulk-board"
+              value={boardId || undefined}
+              placeholder="Select board"
+              options={boardSelectOptions}
+              onChange={setBoardId}
+              disabled={boardSelectOptions.length === 0}
+            >
               <Plus size={16} />
-              <BulkSelect
-                value={boardId || undefined}
-                placeholder="Select board"
-                options={boardSelectOptions}
-                onChange={setBoardId}
-                disabled={boardSelectOptions.length === 0}
-              />
-            </div>
+            </BulkSelect>
           </div>
           <div className="bulk-toolbar-group bulk-actions">
             <button

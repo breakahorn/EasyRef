@@ -503,17 +503,20 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  flex: 1;
-  background: transparent;
-  border: none;
   color: var(--color-text-primary);
   cursor: pointer;
   min-width: 0;
 }
 
-.bulk-select-trigger:disabled {
+.bulk-select-trigger[data-disabled] {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.bulk-select-value {
+  flex: 1;
+  text-align: left;
+  color: var(--color-text-primary);
 }
 
 .bulk-select-icon {
@@ -570,6 +573,10 @@ body {
 .bulk-rating select,
 .bulk-board select {
   min-width: 110px;
+}
+
+.bulk-rating {
+  min-width: 120px;
 }
 
 .bulk-toggle {
