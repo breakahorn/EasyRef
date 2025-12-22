@@ -477,6 +477,7 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 0.4rem 0.6rem;
+  flex: 0 0 auto;
 }
 
 .bulk-field input,
@@ -503,6 +504,10 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  background-color: var(--color-panel-2);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
   color: var(--color-text-primary);
   cursor: pointer;
   min-width: 0;
@@ -559,6 +564,10 @@ body {
 
 .bulk-select-indicator {
   color: var(--color-accent);
+}
+
+.bulk-hidden-input {
+  display: none;
 }
 
 .bulk-field select:disabled {
@@ -639,6 +648,24 @@ body {
 .bulk-toolbar .primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.bulk-toolbar .secondary:disabled,
+.bulk-toolbar .danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bulk-toolbar .primary:not(:disabled):hover {
+  background-color: var(--color-accent-hover);
+}
+
+.bulk-toolbar .secondary:not(:disabled):hover {
+  background-color: #4b5563;
+}
+
+.bulk-toolbar .danger:not(:disabled):hover {
+  background-color: #b91c1c;
 }
 
 .bulk-error {

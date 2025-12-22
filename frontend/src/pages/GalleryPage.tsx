@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Gallery from '../components/Gallery';
-import Uploader from '../components/Uploader';
+// import Uploader from '../components/Uploader';
 import BulkEditToolbar from '../components/BulkEditToolbar';
 
 const GalleryPage: React.FC = () => {
@@ -8,7 +8,7 @@ const GalleryPage: React.FC = () => {
 
   return (
     <div>
-      <Uploader />
+      {/* <Uploader /> */}
       <BulkEditToolbar mode={mode} setMode={setMode} />
       <Gallery mode={mode} />
     </div>

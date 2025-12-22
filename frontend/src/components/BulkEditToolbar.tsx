@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as Select from '@radix-ui/react-select';
-import { AlertTriangle, Check, ChevronDown, Pencil, Plus, Tag, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Pencil, Plus, Tag, UploadCloud, X } from 'lucide-react';
 import { useFileStore } from '../store/useFileStore';
 import { useBoardStore } from '../store/useBoardStore';
 import { buildAssetUrl } from '../lib/api';
@@ -97,6 +97,7 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
     selectedFileIds,
     applyBatch,
     clearSelection,
+    uploadFiles,
   } = useFileStore();
   const { boards, fetchBoards, activeBoardId, setActiveBoard } = useBoardStore();
 
@@ -109,6 +110,7 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     fetchBoards();
@@ -226,21 +228,34 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
     setMode('normal');
   };
 
+  const handleOpenFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    await uploadFiles(event.target.files);
+    event.target.value = '';
+  };
+
   return (
     <div className="bulk-toolbar">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="bulk-hidden-input"
+        onChange={handleUpload}
+      />
       {mode === 'normal' && (
         <div className="bulk-toolbar-group">
           <button
             type="button"
-            className="secondary"
-            onClick={() => {
-              clearSelection();
-              resetInputs();
-              setMode('edit');
-            }}
+            className="primary"
+            onClick={handleOpenFilePicker}
           >
-            <Pencil size={16} className="bulk-btn-icon" />
-            Edit
+            <UploadCloud size={16} />
+            Upload files
           </button>
           <button
             type="button"
@@ -253,6 +268,18 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
           >
             <Plus size={16} className="bulk-btn-icon" />
             Add to board
+          </button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => {
+              clearSelection();
+              resetInputs();
+              setMode('edit');
+            }}
+          >
+            <Pencil size={16} className="bulk-btn-icon" />
+            Edit
           </button>
         </div>
       )}
