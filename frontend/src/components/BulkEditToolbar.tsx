@@ -389,7 +389,7 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
               disabled={!hasSelection || !hasBoardAction}
               onClick={() => setIsConfirmOpen(true)}
             >
-              Apply
+              Add
             </button>
           </div>
         </>
@@ -405,15 +405,17 @@ const BulkEditToolbar: React.FC<BulkEditToolbarProps> = ({ mode, setMode }) => {
       {isConfirmOpen && (
         <div className="bulk-confirm-backdrop" onClick={() => !isApplying && setIsConfirmOpen(false)}>
           <div className="bulk-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Apply changes?</h3>
+            <h3>{mode === 'board' ? 'Add to board?' : 'Apply changes?'}</h3>
             <ul>
               <li>{selectedFileIds.length} items</li>
               {mode === 'edit' && addTagList.length > 0 && <li>Add tags: {addTagList.join(', ')}</li>}
               {mode === 'edit' && removeTagList.length > 0 && <li>Remove tags: {removeTagList.join(', ')}</li>}
               {mode === 'edit' && toggleFavorite && <li>Toggle favorite</li>}
               {mode === 'edit' && ratingValue !== null && <li>Set rating: {ratingValue}</li>}
-              {mode === 'board' && boardIdValue && (
-                <li>Add to board: {boardOptions.find(b => b.id === boardIdValue)?.name}</li>
+              {mode === 'board' && (
+                <li>
+                  Destination: {boardOptions.find(b => b.id === boardIdValue)?.name || 'Unknown'}
+                </li>
               )}
               {mode === 'edit' && deleteSelected && <li className="danger-text">Delete selected</li>}
             </ul>

@@ -7,7 +7,7 @@ const GalleryPage: React.FC = () => {
   const [mode, setMode] = useState<'normal' | 'edit' | 'board'>('normal');
 
   return (
-    <div>
+    <div className="gallery-page">
       {/* <Uploader /> */}
       <BulkEditToolbar mode={mode} setMode={setMode} />
       <Gallery mode={mode} />

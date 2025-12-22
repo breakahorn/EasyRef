@@ -116,12 +116,29 @@ const DraggableGalleryItem = ({
             <Plus size={20} />
           </button>
         )} */}
-        {isSelected && (
+        {selectionEnabled && (
           <>
             <div className="gallery-selection-overlay" />
-            <div className="gallery-checkmark">
-              <Check size={16} strokeWidth={3} />
-            </div>
+            {isSelected ? (
+              <div className="gallery-checkmark">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <mask id={`check-cutout-${file.id}`}>
+                    <rect width="24" height="24" fill="#fff" />
+                    <path
+                      d="M6 12.5l3.5 3.5L18 8.5"
+                      stroke="#000"
+                      strokeWidth="3.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                  </mask>
+                  <circle cx="12" cy="12" r="10" fill="#fff" mask={`url(#check-cutout-${file.id})`} />
+                </svg>
+              </div>
+            ) : (
+              <div className="gallery-checkmark-empty" />
+            )}
           </>
         )}
         {renderThumbnail()}
@@ -247,35 +264,46 @@ const Gallery: React.FC<GalleryProps> = ({ mode }) => {
 
   return (
     <div
-      ref={gridRef}
-      className="gallery-grid"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={finalizeSelection}
-      onMouseLeave={finalizeSelection}
+      className="gallery-area"
+      onMouseDown={(e) => {
+        if (!selectionEnabled) return;
+        const target = e.target as HTMLElement;
+        if (target.closest('.gallery-grid')) return;
+        if (target.closest('.gallery-item')) return;
+        clearSelection();
+      }}
     >
-      {files.map((file) => (
-        <DraggableGalleryItem
-          key={file.id}
-          file={file}
-          isSelected={selectedFileIds.includes(file.id)}
-          onToggleSelect={toggleFileSelection}
-          onOpenDetails={selectFile}
-          onItemRef={handleItemRef}
-          selectionEnabled={selectionEnabled}
-        />
-      ))}
-      {selectionEnabled && selectionRect && (
-        <div
-          className="gallery-selection-rect"
-          style={{
-            left: selectionRect.x,
-            top: selectionRect.y,
-            width: selectionRect.width,
-            height: selectionRect.height
-          }}
-        />
-      )}
+      <div
+        ref={gridRef}
+        className="gallery-grid"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={finalizeSelection}
+        onMouseLeave={finalizeSelection}
+      >
+        {files.map((file) => (
+          <DraggableGalleryItem
+            key={file.id}
+            file={file}
+            isSelected={selectedFileIds.includes(file.id)}
+            onToggleSelect={toggleFileSelection}
+            onOpenDetails={selectFile}
+            onItemRef={handleItemRef}
+            selectionEnabled={selectionEnabled}
+          />
+        ))}
+        {selectionEnabled && selectionRect && (
+          <div
+            className="gallery-selection-rect"
+            style={{
+              left: selectionRect.x,
+              top: selectionRect.y,
+              width: selectionRect.width,
+              height: selectionRect.height
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };

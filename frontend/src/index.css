@@ -168,6 +168,17 @@ body {
   overflow-y: auto;
 }
 
+.gallery-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.gallery-area {
+  flex: 1;
+  min-height: 100%;
+}
+
 /* --- Sidebar Styles --- */
 .sidebar {
   width: 324px;
@@ -347,6 +358,7 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1.5rem;
   position: relative;
+  min-height: 100%;
 }
 
 .gallery-item {
@@ -478,7 +490,7 @@ body {
 .gallery-selection-overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 5;
 }
 
@@ -488,12 +500,28 @@ body {
   left: 0.6rem;
   width: 22px;
   height: 22px;
-  border-radius: 9999px;
-  border: 3px solid #ffffff;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 6;
+  background-color: transparent;
+}
+
+.gallery-checkmark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.gallery-checkmark-empty {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  border: 3px solid #ffffff;
   z-index: 6;
   background-color: rgba(0, 0, 0, 0.15);
 }
