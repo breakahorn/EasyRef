@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
+from typing import Iterable
 
 import models
 import schemas
@@ -70,6 +71,21 @@ def _get_video_metadata(file_path: str) -> dict:
 def _normalize_tag_names(tag_names: List[str]) -> List[str]:
     return [tag.strip() for tag in tag_names if tag and tag.strip()]
 
+def _set_file_url(file: models.File):
+    if file and file.path:
+        file.file_url = storage_backend.public_url(file.path)
+
+def _set_files_url(files: Iterable[models.File]):
+    for f in files:
+        _set_file_url(f)
+
+def _set_board_file_urls(board: models.Board):
+    if not board:
+        return
+    for item in board.items:
+        if item.file:
+            _set_file_url(item.file)
+
 # --- Core API Endpoints ---
 
 @app.get("/")
@@ -116,6 +132,7 @@ def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_
         db.add(db_file)
         db.commit()
         db.refresh(db_file)
+        _set_file_url(db_file)
         created_files.append(db_file)
         
     return created_files
@@ -123,6 +140,7 @@ def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_
 @app.get("/files", response_model=List[schemas.File])
 def get_files(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     files = db.query(models.File).options(joinedload(models.File.file_metadata)).offset(skip).limit(limit).all()
+    _set_files_url(files)
     return files
 
 @app.get("/files/search/", response_model=List[schemas.File])
@@ -156,7 +174,9 @@ def search_files(
         query = query.filter(or_(*[func.lower(models.File.name).endswith(ext) for ext in IMAGE_EXTENSIONS]))
     elif file_type == "video":
         query = query.filter(or_(*[func.lower(models.File.name).endswith(ext) for ext in VIDEO_EXTENSIONS]))
-    return query.all()
+    results = query.all()
+    _set_files_url(results)
+    return results
 
 @app.put("/files/{file_id}/metadata", response_model=schemas.Metadata)
 def update_file_metadata(file_id: int, metadata: schemas.MetadataUpdate, db: Session = Depends(get_db)):
@@ -321,6 +341,7 @@ def batch_apply(payload: schemas.BatchApplyRequest, db: Session = Depends(get_db
 def get_random_file(db: Session = Depends(get_db)):
     random_file = db.query(models.File).order_by(func.random()).first()
     if not random_file: raise HTTPException(status_code=404, detail="No files found in the library")
+    _set_file_url(random_file)
     return random_file
 
 @app.post("/files/{file_id}/tags", response_model=schemas.File)
@@ -341,6 +362,7 @@ def add_tag_to_file(file_id: int, tag: schemas.TagCreate, db: Session = Depends(
         db_file.tags.append(db_tag)
         db.commit()
         db.refresh(db_file)
+    _set_file_url(db_file)
 
     return db_file
 
@@ -362,6 +384,7 @@ def remove_tag_from_file(file_id: int, tag_id: int, db: Session = Depends(get_db
         db_file.tags.remove(tag_to_remove)
         db.commit()
         db.refresh(db_file)
+    _set_file_url(db_file)
 
     return db_file
 
@@ -404,6 +427,7 @@ def get_board(board_id: int, db: Session = Depends(get_db)):
     ).filter(models.Board.id == board_id).first()
     if db_board is None:
         raise HTTPException(status_code=404, detail="Board not found")
+    _set_board_file_urls(db_board)
     return db_board
 
 @app.put("/boards/{board_id}", response_model=schemas.Board)

@@ -54,6 +54,7 @@ class File(FileBase):
     file_metadata: Optional[Metadata] = None
     storage_type: Optional[str] = None
     storage_key: Optional[str] = None
+    file_url: Optional[str] = None
 
     class Config:
         from_attributes = True
