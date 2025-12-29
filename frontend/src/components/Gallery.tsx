@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { useFileStore } from '../store/useFileStore';
-import { useBoardStore } from '../store/useBoardStore';
+// import { useBoardStore } from '../store/useBoardStore';
 // import { Check, Plus } from 'lucide-react';
 import type { FileRecord } from '../store/useFileStore';
 import { buildAssetUrl } from '../lib/api';
