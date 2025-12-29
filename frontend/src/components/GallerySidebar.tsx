@@ -103,7 +103,10 @@ const GallerySidebar: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <button type="button" onClick={handleClear} className="danger flex items-center justify-center gap-2"><XCircle size={16} />Clear Filters</button>
+            <button type="button" onClick={handleClear} className="danger clear-filters-btn">
+              <XCircle size={16} />
+              Clear Filters
+            </button>
           </div>
         </form>
       </div>

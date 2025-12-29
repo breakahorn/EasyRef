@@ -103,3 +103,28 @@ class Board(BoardBase):
 
     class Config:
         from_attributes = True
+
+# --- Batch Operation Schemas ---
+class BatchBoardItemCreate(BaseModel):
+    file_id: int
+    pos_x: float
+    pos_y: float
+    width: float
+    height: float
+    rotation: float = 0
+    z_index: int = 0
+
+class BatchApplyRequest(BaseModel):
+    file_ids: List[int]
+    add_tags: List[str] = []
+    remove_tags: List[str] = []
+    toggle_favorite: bool = False
+    rating: Optional[int] = None
+    delete_files: bool = False
+    board_id: Optional[int] = None
+    board_items: Optional[List[BatchBoardItemCreate]] = None
+
+class BatchApplyResponse(BaseModel):
+    updated: int
+    added_to_board: int
+    deleted: int

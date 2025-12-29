@@ -29,21 +29,48 @@ export interface FileRecord {
 interface FileState {
   files: FileRecord[];
   selectedFile: FileRecord | null;
+  selectedFileIds: number[];
   isLoading: boolean;
   fetchFiles: () => Promise<void>;
   searchFiles: (params: object) => Promise<void>;
   fetchRandomFile: () => Promise<void>;
   uploadFiles: (files: FileList) => Promise<void>;
   selectFile: (file: FileRecord | null) => void;
+  toggleFileSelection: (fileId: number) => void;
+  setSelectedFiles: (fileIds: number[]) => void;
+  clearSelection: () => void;
   updateMetadata: (fileId: number, metadata: Partial<FileMetadata>) => Promise<void>;
   deleteFile: (fileId: number) => Promise<void>;
   addTag: (fileId: number, tagName: string) => Promise<void>;
   removeTag: (fileId: number, tagId: number) => Promise<void>;
+  applyBatch: (payload: BatchApplyPayload) => Promise<void>;
+}
+
+interface BatchBoardItemCreate {
+  file_id: number;
+  pos_x: number;
+  pos_y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  z_index?: number;
+}
+
+interface BatchApplyPayload {
+  file_ids: number[];
+  add_tags?: string[];
+  remove_tags?: string[];
+  toggle_favorite?: boolean;
+  rating?: number | null;
+  delete_files?: boolean;
+  board_id?: number | null;
+  board_items?: BatchBoardItemCreate[] | null;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
   files: [],
   selectedFile: null,
+  selectedFileIds: [],
   isLoading: false,
 
   fetchFiles: async () => {
@@ -99,6 +126,24 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   selectFile: (file) => {
     set({ selectedFile: file });
+  },
+
+  toggleFileSelection: (fileId) => {
+    set(state => {
+      const isSelected = state.selectedFileIds.includes(fileId);
+      const selectedFileIds = isSelected
+        ? state.selectedFileIds.filter(id => id !== fileId)
+        : [...state.selectedFileIds, fileId];
+      return { selectedFileIds };
+    });
+  },
+
+  setSelectedFiles: (fileIds) => {
+    set({ selectedFileIds: fileIds });
+  },
+
+  clearSelection: () => {
+    set({ selectedFileIds: [] });
   },
 
   updateMetadata: async (fileId, metadata) => {
@@ -168,6 +213,17 @@ export const useFileStore = create<FileState>((set, get) => ({
       await fetchTags();
     } catch (error) {
       console.error(`Error removing tag from file ${fileId}:`, error);
+    }
+  },
+
+  applyBatch: async (payload) => {
+    try {
+      await axios.post(`${API_BASE_URL}/files/batch-apply`, payload);
+      await get().fetchFiles();
+      set({ selectedFileIds: [] });
+    } catch (error) {
+      console.error("Error applying batch operation:", error);
+      throw error;
     }
   },
 }));

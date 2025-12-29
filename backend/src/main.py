@@ -1,6 +1,7 @@
 
 import os
 import shutil
+import uuid
 import cv2
 from typing import List, Optional
 from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
@@ -58,6 +59,9 @@ def _get_video_metadata(file_path: str) -> dict:
         cap.release()
         return {"duration": duration, "width": width, "height": height}
     except Exception: return {}
+
+def _normalize_tag_names(tag_names: List[str]) -> List[str]:
+    return [tag.strip() for tag in tag_names if tag and tag.strip()]
 
 # --- Core API Endpoints ---
 
@@ -155,6 +159,151 @@ def update_file_metadata(file_id: int, metadata: schemas.MetadataUpdate, db: Ses
     db.commit()
     db.refresh(db_file.file_metadata)
     return db_file.file_metadata
+
+@app.post("/files/batch-apply", response_model=schemas.BatchApplyResponse)
+def batch_apply(payload: schemas.BatchApplyRequest, db: Session = Depends(get_db)):
+    if not payload.file_ids:
+        raise HTTPException(status_code=400, detail="No file ids provided")
+
+    file_ids = list(dict.fromkeys(payload.file_ids))
+    files = db.query(models.File).options(
+        joinedload(models.File.tags),
+        joinedload(models.File.file_metadata)
+    ).filter(models.File.id.in_(file_ids)).all()
+
+    if len(files) != len(file_ids):
+        missing = set(file_ids) - {f.id for f in files}
+        raise HTTPException(status_code=404, detail=f"Files not found: {sorted(missing)}")
+
+    board = None
+    if payload.board_id is not None:
+        if payload.delete_files:
+            raise HTTPException(status_code=400, detail="Cannot add to board while deleting files")
+        board = db.query(models.Board).filter(models.Board.id == payload.board_id).first()
+        if not board:
+            raise HTTPException(status_code=404, detail="Board not found")
+        if not payload.board_items:
+            raise HTTPException(status_code=400, detail="board_items is required when board_id is provided")
+        item_file_ids = {item.file_id for item in payload.board_items}
+        if not item_file_ids.issubset(set(file_ids)):
+            raise HTTPException(status_code=400, detail="board_items must reference selected file ids")
+
+    add_tag_names = _normalize_tag_names(payload.add_tags)
+    remove_tag_names = _normalize_tag_names(payload.remove_tags)
+    add_tag_map = {}
+    remove_tag_ids = set()
+
+    if add_tag_names or remove_tag_names:
+        tag_names_lower = {name.lower() for name in add_tag_names + remove_tag_names}
+        existing_tags = db.query(models.Tag).filter(func.lower(models.Tag.name).in_(tag_names_lower)).all()
+        tag_by_lower = {tag.name.lower(): tag for tag in existing_tags}
+
+        for name in add_tag_names:
+            tag = tag_by_lower.get(name.lower())
+            if not tag:
+                tag = models.Tag(name=name)
+                db.add(tag)
+                db.flush()
+                tag_by_lower[name.lower()] = tag
+            add_tag_map[tag.id] = tag
+
+        for name in remove_tag_names:
+            tag = tag_by_lower.get(name.lower())
+            if tag:
+                remove_tag_ids.add(tag.id)
+
+    moved_files = []
+    updated_count = 0
+    added_to_board = 0
+    deleted_count = 0
+    trash_dir = os.path.join(STORAGE_PATH, ".trash")
+
+    try:
+        for db_file in files:
+            changed = False
+
+            if add_tag_map:
+                for tag in add_tag_map.values():
+                    if tag not in db_file.tags:
+                        db_file.tags.append(tag)
+                        changed = True
+
+            if remove_tag_ids:
+                original_len = len(db_file.tags)
+                db_file.tags = [tag for tag in db_file.tags if tag.id not in remove_tag_ids]
+                if len(db_file.tags) != original_len:
+                    changed = True
+
+            if payload.toggle_favorite or payload.rating is not None:
+                if not db_file.file_metadata:
+                    db_file.file_metadata = models.Metadata(file_id=db_file.id)
+                if payload.toggle_favorite:
+                    db_file.file_metadata.is_favorite = not bool(db_file.file_metadata.is_favorite)
+                if payload.rating is not None:
+                    db_file.file_metadata.rating = payload.rating
+                changed = True
+
+            if changed:
+                updated_count += 1
+
+        if board and payload.board_items:
+            for item in payload.board_items:
+                db_item = models.BoardItem(
+                    board_id=board.id,
+                    file_id=item.file_id,
+                    pos_x=item.pos_x,
+                    pos_y=item.pos_y,
+                    width=item.width,
+                    height=item.height,
+                    rotation=item.rotation,
+                    z_index=item.z_index,
+                    original_width=item.width,
+                    original_height=item.height,
+                )
+                db.add(db_item)
+                added_to_board += 1
+
+        if payload.delete_files:
+            os.makedirs(trash_dir, exist_ok=True)
+            for db_file in files:
+                if not os.path.exists(db_file.path):
+                    raise HTTPException(status_code=400, detail=f"Missing file on disk: {db_file.path}")
+                trash_name = f"{uuid.uuid4()}_{os.path.basename(db_file.path)}"
+                trash_path = os.path.join(trash_dir, trash_name)
+                shutil.move(db_file.path, trash_path)
+                moved_files.append((db_file.path, trash_path))
+
+            for db_file in files:
+                db.delete(db_file)
+            deleted_count = len(files)
+
+        db.commit()
+
+    except HTTPException:
+        db.rollback()
+        for original_path, trash_path in moved_files:
+            if os.path.exists(trash_path):
+                shutil.move(trash_path, original_path)
+        raise
+    except Exception as e:
+        db.rollback()
+        for original_path, trash_path in moved_files:
+            if os.path.exists(trash_path):
+                shutil.move(trash_path, original_path)
+        raise HTTPException(status_code=500, detail=f"Batch operation failed: {e}")
+
+    for _, trash_path in moved_files:
+        if os.path.exists(trash_path):
+            try:
+                os.remove(trash_path)
+            except OSError:
+                pass
+
+    return schemas.BatchApplyResponse(
+        updated=updated_count,
+        added_to_board=added_to_board,
+        deleted=deleted_count
+    )
 
 @app.get("/files/random/", response_model=schemas.File)
 def get_random_file(db: Session = Depends(get_db)):
