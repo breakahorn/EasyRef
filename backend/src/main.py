@@ -13,6 +13,7 @@ from sqlalchemy import or_, func
 import models
 import schemas
 from database import SessionLocal, engine
+from storage import get_storage_backend, LocalStorageBackend
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -32,8 +33,13 @@ app.add_middleware(
 )
 
 # --- Constants and Setup ---
-STORAGE_PATH = "./storage"
-os.makedirs(STORAGE_PATH, exist_ok=True)
+storage_backend = get_storage_backend()
+# Keep STORAGE_PATH for backwards compatibility and /storage serving.
+if isinstance(storage_backend, LocalStorageBackend):
+    STORAGE_PATH = storage_backend.base_path
+else:
+    STORAGE_PATH = "./storage"
+    os.makedirs(STORAGE_PATH, exist_ok=True)
 
 IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp')
 VIDEO_EXTENSIONS = ('.mp4', '.webm', '.mov', '.avi')
@@ -81,15 +87,13 @@ async def get_storage_file(filename: str):
 def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
     created_files = []
     for file in files:
-        file_location = os.path.join(STORAGE_PATH, file.filename)
         if ".." in file.filename: 
             # Skip this file or raise an exception for the whole batch
             print(f"Skipping invalid filename: {file.filename}")
             continue
 
         try:
-            with open(file_location, "wb+") as file_object:
-                shutil.copyfileobj(file.file, file_object)
+            file_location = storage_backend.save_upload(file, filename=file.filename)
         except Exception as e:
             # Decide how to handle partial failures
             print(f"Could not save file {file.filename}: {e}")
@@ -363,12 +367,7 @@ def delete_file(file_id: int, db: Session = Depends(get_db)):
         return
     
     # Delete the actual file from storage
-    if os.path.exists(db_file.path):
-        try:
-            os.remove(db_file.path)
-        except OSError as e:
-            # Log this error, but don't block DB deletion
-            print(f"Error deleting file {db_file.path}: {e}")
+    storage_backend.delete(db_file.path)
 
     db.delete(db_file)
     db.commit()
