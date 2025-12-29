@@ -13,7 +13,7 @@ from sqlalchemy import or_, func
 import models
 import schemas
 from database import SessionLocal, engine
-from storage import get_storage_backend, LocalStorageBackend
+from storage import get_storage_backend, LocalStorageBackend, R2StorageBackend
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -79,10 +79,12 @@ def read_root():
 # Custom endpoint to serve files with CORS headers
 @app.get("/storage/{filename}")
 async def get_storage_file(filename: str):
+    # For local storage, serve from disk. For remote storage we currently
+    # do not proxy; clients should prefer public URLs when available.
     file_path = os.path.join(STORAGE_PATH, filename)
-    if not os.path.isfile(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_path, headers={"Access-Control-Allow-Origin": "*"})
+    if os.path.isfile(file_path):
+        return FileResponse(file_path, headers={"Access-Control-Allow-Origin": "*"})
+    raise HTTPException(status_code=404, detail="File not found")
 
 @app.post("/files/upload", response_model=List[schemas.File])
 def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
