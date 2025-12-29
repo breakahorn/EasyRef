@@ -1,5 +1,6 @@
 
 import os
+from dotenv import load_dotenv
 import shutil
 import uuid
 import cv2
@@ -34,6 +35,7 @@ app.add_middleware(
 )
 
 # --- Constants and Setup ---
+load_dotenv()
 storage_backend = get_storage_backend()
 STORAGE_TYPE = os.getenv("STORAGE_BACKEND", "local").lower()
 # Keep STORAGE_PATH for backwards compatibility and /storage serving.
