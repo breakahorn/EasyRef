@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { useFileStore } from '../store/useFileStore';
 import { useBoardStore } from '../store/useBoardStore';
-import { Check, Plus } from 'lucide-react';
+// import { Check, Plus } from 'lucide-react';
 import type { FileRecord } from '../store/useFileStore';
 import { buildAssetUrl } from '../lib/api';
 
@@ -30,7 +30,7 @@ const DraggableGalleryItem = ({
   onItemRef,
   selectionEnabled
 }: DraggableGalleryItemProps) => {
-  const { activeBoardId, addItemToBoard } = useBoardStore();
+  // const { activeBoardId, addItemToBoard } = useBoardStore();
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.IMAGE,
@@ -40,37 +40,37 @@ const DraggableGalleryItem = ({
     }),
   }));
 
-  const handleAddToBoard = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!activeBoardId) return;
+  // const handleAddToBoard = (e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   if (!activeBoardId) return;
 
-    const img = new window.Image();
-    img.src = buildAssetUrl(file.path);
+  //   const img = new window.Image();
+  //   img.src = buildAssetUrl(file.path);
 
-    img.onload = () => {
-      const initialWidth = 250;
-      const aspectRatio = img.naturalWidth / img.naturalHeight;
-      // Center in the canvas area, accounting for sidebar and padding
-      const padding = 32; // 2rem = 32px
-      addItemToBoard(activeBoardId, file.id, {
-        pos_x: (window.innerWidth - 324 - (padding * 2)) / 2,
-        pos_y: (window.innerHeight - 57 - (padding * 2)) / 2,
-        width: initialWidth,
-        height: initialWidth / aspectRatio,
-        rotation: 0,
-      });
-    };
-    img.onerror = () => {
-      const padding = 32;
-      addItemToBoard(activeBoardId, file.id, {
-        pos_x: (window.innerWidth - 324 - (padding * 2)) / 2,
-        pos_y: (window.innerHeight - 57 - (padding * 2)) / 2,
-        width: 200,
-        height: 200,
-        rotation: 0,
-      });
-    }
-  };
+  //   img.onload = () => {
+  //     const initialWidth = 250;
+  //     const aspectRatio = img.naturalWidth / img.naturalHeight;
+  //     // Center in the canvas area, accounting for sidebar and padding
+  //     const padding = 32; // 2rem = 32px
+  //     addItemToBoard(activeBoardId, file.id, {
+  //       pos_x: (window.innerWidth - 324 - (padding * 2)) / 2,
+  //       pos_y: (window.innerHeight - 57 - (padding * 2)) / 2,
+  //       width: initialWidth,
+  //       height: initialWidth / aspectRatio,
+  //       rotation: 0,
+  //     });
+  //   };
+  //   img.onerror = () => {
+  //     const padding = 32;
+  //     addItemToBoard(activeBoardId, file.id, {
+  //       pos_x: (window.innerWidth - 324 - (padding * 2)) / 2,
+  //       pos_y: (window.innerHeight - 57 - (padding * 2)) / 2,
+  //       width: 200,
+  //       height: 200,
+  //       rotation: 0,
+  //     });
+  //   }
+  // };
 
   const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
   const isImage = IMAGE_EXTENSIONS.includes(fileExtension);
