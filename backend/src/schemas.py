@@ -52,6 +52,8 @@ class File(FileBase):
     created_at: datetime.datetime
     tags: List[Tag] = []
     file_metadata: Optional[Metadata] = None
+    storage_type: Optional[str] = None
+    storage_key: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -34,6 +34,7 @@ app.add_middleware(
 
 # --- Constants and Setup ---
 storage_backend = get_storage_backend()
+STORAGE_TYPE = os.getenv("STORAGE_BACKEND", "local").lower()
 # Keep STORAGE_PATH for backwards compatibility and /storage serving.
 if isinstance(storage_backend, LocalStorageBackend):
     STORAGE_PATH = storage_backend.base_path
@@ -99,7 +100,12 @@ def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_
             print(f"Could not save file {file.filename}: {e}")
             continue
         
-        db_file = models.File(name=file.filename, path=file_location)
+        db_file = models.File(
+            name=file.filename,
+            path=file_location,
+            storage_type=STORAGE_TYPE,
+            storage_key=os.path.basename(file_location),
+        )
         if file.filename.lower().endswith(VIDEO_EXTENSIONS):
             video_meta = _get_video_metadata(file_location)
             if video_meta:

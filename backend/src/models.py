@@ -30,6 +30,8 @@ class File(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     path = Column(String, unique=True, index=True)
+    storage_type = Column(String, default="local")  # local, r2, etc.
+    storage_key = Column(String, nullable=True)      # object key for remote stores
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     tags = relationship("Tag", secondary=file_tags, back_populates="files")
