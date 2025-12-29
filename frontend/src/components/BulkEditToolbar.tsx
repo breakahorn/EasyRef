@@ -3,7 +3,7 @@ import * as Select from '@radix-ui/react-select';
 import { AlertTriangle, Check, ChevronDown, Pencil, Plus, Tag, UploadCloud, X } from 'lucide-react';
 import { useFileStore } from '../store/useFileStore';
 import { useBoardStore } from '../store/useBoardStore';
-import { buildAssetUrl } from '../lib/api';
+import { resolveFileUrl } from '../lib/api';
 import type { FileRecord } from '../store/useFileStore';
 
 type BoardOption = { id: number; name: string };
@@ -81,7 +81,7 @@ const loadImageSize = (file: FileRecord) =>
     }
 
     const img = new Image();
-    img.src = buildAssetUrl(file.path);
+    img.src = resolveFileUrl(file);
     img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
     img.onerror = () => resolve({ width: 200, height: 200 });
   });

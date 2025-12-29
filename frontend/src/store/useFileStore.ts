@@ -21,9 +21,12 @@ export interface FileRecord {
   id: number;
   name: string;
   path: string;
+  file_url?: string;
   created_at: string;
   tags: { id: number; name: string }[];
   file_metadata: FileMetadata | null;
+  storage_type?: string;
+  storage_key?: string | null;
 }
 
 interface FileState {

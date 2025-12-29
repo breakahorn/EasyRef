@@ -14,3 +14,9 @@ export const buildAssetUrl = (filePath: string) => {
   const normalized = filePath.replace(/\\/g, '/').replace(/^\.?\//, '');
   return `${API_BASE_URL}/${normalized}`;
 };
+
+export const resolveFileUrl = (file?: { file_url?: string; path?: string }) => {
+  if (!file) return '';
+  if (file.file_url) return file.file_url;
+  return buildAssetUrl(file.path ?? '');
+};

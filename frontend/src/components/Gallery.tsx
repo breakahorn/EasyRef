@@ -4,7 +4,7 @@ import { useFileStore } from '../store/useFileStore';
 // import { useBoardStore } from '../store/useBoardStore';
 // import { Check, Plus } from 'lucide-react';
 import type { FileRecord } from '../store/useFileStore';
-import { buildAssetUrl } from '../lib/api';
+import { resolveFileUrl } from '../lib/api';
 
 export const ItemTypes = {
   IMAGE: 'image',
@@ -84,7 +84,7 @@ const DraggableGalleryItem = ({
   };
 
   const renderThumbnail = () => {
-    const url = buildAssetUrl(file.path);
+    const url = resolveFileUrl(file);
     if (isImage) {
       return <img src={url} alt={file.name} loading="lazy" />;
     } else if (isVideo) {

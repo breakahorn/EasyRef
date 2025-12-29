@@ -2,7 +2,7 @@ import { Image } from 'react-konva';
 import Konva from 'konva';
 import useImage from 'use-image';
 import type { BoardItem } from '../store/useBoardStore';
-import { buildAssetUrl } from '../lib/api';
+import { resolveFileUrl } from '../lib/api';
 
 interface BoardImageProps {
   item: BoardItem;
@@ -12,7 +12,7 @@ interface BoardImageProps {
 }
 
 const BoardImage = ({ item, onSelect, onDragEnd, onContextMenu }: BoardImageProps) => {
-  const imageUrl = buildAssetUrl(item.file.path);
+  const imageUrl = resolveFileUrl(item.file);
   const [image] = useImage(imageUrl, 'anonymous');
 
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFileStore } from '../store/useFileStore';
 import { X, Star, Heart, Tag as TagIcon, MessageSquare, ZoomIn, ZoomOut, RotateCcw, FlipHorizontal, Pipette, Copy, SlidersHorizontal, AlertTriangle } from 'lucide-react';
-import { buildAssetUrl } from '../lib/api';
+import { resolveFileUrl } from '../lib/api';
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
@@ -82,7 +82,7 @@ const FileDetailModal: React.FC = () => {
     if (isImage && selectedFile) {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = buildAssetUrl(selectedFile.path);
+      img.src = resolveFileUrl(selectedFile);
       img.onload = () => {
         imageRef.current = img;
         resetViewerState(); // Reset state when new image is loaded
@@ -209,7 +209,7 @@ const FileDetailModal: React.FC = () => {
             {isImage ? (
               <canvas ref={canvasRef} onMouseMove={handleColorPick} onClick={handleColorLockToggle} style={{ cursor: isPickerEnabled ? 'crosshair' : (isPanning ? 'grabbing' : 'grab') }} />
             ) : isVideo ? (
-              <video src={buildAssetUrl(selectedFile.path)} controls autoPlay loop className="w-full h-full object-contain" />
+              <video src={resolveFileUrl(selectedFile)} controls autoPlay loop className="w-full h-full object-contain" />
             ) : (
               <p>Unsupported file type</p>
             )}
