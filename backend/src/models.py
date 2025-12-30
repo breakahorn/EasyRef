@@ -13,6 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from typing import ClassVar, Optional
 
 from database import Base
 
@@ -26,6 +27,7 @@ file_tags = Table(
 
 class File(Base):
     __tablename__ = "files"
+    __allow_unmapped__ = True  # allow runtime-only attributes
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
@@ -36,6 +38,7 @@ class File(Base):
 
     tags = relationship("Tag", secondary=file_tags, back_populates="files")
     file_metadata = relationship("Metadata", uselist=False, back_populates="file", cascade="all, delete-orphan")
+    file_url: ClassVar[Optional[str]] = None  # runtime-only attribute for responses
 
 class Tag(Base):
     __tablename__ = "tags"

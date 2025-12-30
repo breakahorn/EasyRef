@@ -17,6 +17,10 @@ export const buildAssetUrl = (filePath: string) => {
 
 export const resolveFileUrl = (file?: { file_url?: string; path?: string }) => {
   if (!file) return '';
-  if (file.file_url) return file.file_url;
+  if (file.file_url) {
+    if (/^https?:\/\//i.test(file.file_url)) return file.file_url;
+    const normalized = file.file_url.replace(/^\/+/, '').replace(/\\/g, '/');
+    return `${API_BASE_URL}/${normalized}`;
+  }
   return buildAssetUrl(file.path ?? '');
 };

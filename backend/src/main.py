@@ -474,7 +474,10 @@ def add_item_to_board(board_id: int, item: schemas.BoardItemCreate, db: Session 
     )
     db.add(db_item)
     db.commit()
-    db.refresh(db_item)
+    # Reload with file relation for response and attach file_url
+    db_item = db.query(models.BoardItem).options(joinedload(models.BoardItem.file)).filter(models.BoardItem.id == db_item.id).first()
+    if db_item and db_item.file:
+        _set_file_url(db_item.file)
     return db_item
 
 @app.put("/items/{item_id}", response_model=schemas.BoardItem)

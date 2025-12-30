@@ -50,9 +50,12 @@ class LocalStorageBackend:
                 pass
 
     def public_url(self, stored_path: str) -> str:
-        # For local storage we keep returning the filesystem path; the existing
-        # /storage/{filename} endpoint serves the file.
-        return stored_path
+        try:
+            rel = os.path.relpath(stored_path, self.base_path)
+        except ValueError:
+            rel = os.path.basename(stored_path)
+        rel = rel.replace("\\", "/")
+        return f"storage/{rel}"
 
 
 class R2StorageBackend:
@@ -101,8 +104,8 @@ class R2StorageBackend:
     def public_url(self, stored_path: str) -> str:
         if self.public_base_url:
             return f"{self.public_base_url}/{stored_path}"
-        # If no public base URL, fall back to key (caller may handle).
-        return stored_path
+        # Fallback: construct a public URL using bucket + account domain.
+        return f"https://{self.bucket}.{self.account_id}.r2.cloudflarestorage.com/{stored_path}"
 
 
 def get_storage_backend() -> StorageBackend:
