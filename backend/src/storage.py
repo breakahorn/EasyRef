@@ -70,6 +70,7 @@ class R2StorageBackend:
         public_base_url: Optional[str] = None,
     ) -> None:
         self.bucket = bucket
+        self.account_id = account_id
         self.public_base_url = public_base_url.rstrip("/") if public_base_url else None
         endpoint = f"https://{account_id}.r2.cloudflarestorage.com"
         self.client: BaseClient = boto3.client(

@@ -107,6 +107,7 @@ async def get_storage_file(filename: str):
 @app.post("/files/upload", response_model=List[schemas.File])
 def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
     created_files = []
+    print(f"DEBUG: Starting upload for {len(files)} files")
     for file in files:
         if ".." in file.filename: 
             # Skip this file or raise an exception for the whole batch
@@ -131,11 +132,13 @@ def upload_files(files: List[UploadFile] = File(...), db: Session = Depends(get_
             if video_meta:
                 db_file.file_metadata = models.Metadata(**video_meta)
 
+        print(f"DEBUG: Adding to DB: {db_file.name}")
         db.add(db_file)
         db.commit()
         db.refresh(db_file)
         _set_file_url(db_file)
         created_files.append(db_file)
+        print(f"DEBUG: Successfully added file ID: {db_file.id}")
         
     return created_files
 
